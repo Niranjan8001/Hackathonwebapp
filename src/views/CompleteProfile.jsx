@@ -15,7 +15,7 @@ const Feature = ({ icon, title, desc }) => (
 );
 
 export const CompleteProfile = () => {
-  const { currentUser, updateProfileImages, updateBio, addCertification } = useFarmerContext();
+  const { currentUser, updateProfileImages, updateBio, addCertification, setJustRegistered } = useFarmerContext();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [bio, setBio] = useState('');
@@ -59,6 +59,7 @@ export const CompleteProfile = () => {
     
     // In a real app, we'd update bio and isProfileComplete in the context as well
     // For now, redirecting to dashboard
+    setJustRegistered(false);
     navigate('/dashboard');
   };
 

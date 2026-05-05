@@ -24,23 +24,37 @@ export const ProductsView = () => {
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
-  const inStockCount = products.filter(p => p.stock > 0 || p.status === 'In Stock').length;
-  // Estimate views and sales based on sold amount if needed, or default to 0
-  const totalSales = products.reduce((acc, p) => acc + (parseFloat(p.sold) || 0) * (parseFloat(p.price?.replace('₹', '')) || 0), 0);
+  const normalizedProducts = useMemo(() => {
+    return products.map(p => ({
+      ...p,
+      id: p._id || p.id,
+      name: p.title || p.name,
+      image: p.images?.[0] || p.image || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=400&fit=crop',
+    }));
+  }, [products]);
 
+  const inStockCount = normalizedProducts.filter(p => p.stock > 0 || p.status === 'In Stock').length;
+  // Estimate views and sales based on sold amount if needed, or default to 0
+  const totalSalesValue = normalizedProducts.reduce((acc, p) => {
+    const sold = parseFloat(p.sold) || 0;
+    const price = parseFloat(p.price) || 0;
+    return acc + (sold * price);
+  }, 0);
+
+  const totalViewsValue = normalizedProducts.reduce((acc, p) => acc + (parseInt(p.views) || 0), 0);
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return normalizedProducts.filter(product => {
       const matchesSearch = product.name?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'All Categories' || product.category === categoryFilter;
       const matchesStatus = statusFilter === 'All Status' || product.status === statusFilter;
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [products, searchQuery, categoryFilter, statusFilter]);
+  }, [normalizedProducts, searchQuery, categoryFilter, statusFilter]);
 
   return (
     <GlassLayout>
@@ -67,15 +81,15 @@ export const ProductsView = () => {
           <StatCard 
             icon={<Eye className="text-blue-400" />} 
             label="Total Views" 
-            value={products.length > 0 ? "1,248" : "0"} 
-            trend="This month" 
+            value={totalViewsValue.toLocaleString()} 
+            trend="Real-time tracking" 
             trendColor="text-white/40"
           />
           <StatCard 
             icon={<TrendingUp className="text-green-400" />} 
             label="Total Sales" 
-            value={products.length > 0 ? "₹48,650" : "₹0"} 
-            trend="This month" 
+            value={`₹${totalSalesValue.toLocaleString()}`} 
+            trend="From confirmed orders" 
             trendColor="text-white/40"
           />
         </div>
@@ -224,7 +238,9 @@ const ProductRow = ({ product }) => {
         <span className="text-xs font-bold text-white/60">{product.category}</span>
       </td>
       <td className="py-4">
-        <span className="text-xs font-black">{product.price}</span>
+        <span className="text-xs font-black">
+          {String(product.price).startsWith('₹') ? product.price : `₹${product.price}`}
+        </span>
         <span className="text-[10px] text-white/20 ml-1">{product.unit}</span>
       </td>
       <td className="py-4">
@@ -233,7 +249,7 @@ const ProductRow = ({ product }) => {
         </span>
       </td>
       <td className="py-4">
-        <span className="text-xs font-bold text-white/60">45 kg</span>
+        <span className="text-xs font-bold text-white/60">{product.sold || 0} {product.unit || 'units'}</span>
       </td>
       <td className="py-4">
         <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${

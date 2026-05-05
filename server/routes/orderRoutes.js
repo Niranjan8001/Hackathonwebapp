@@ -1,5 +1,5 @@
 import express from 'express';
-import { createOrder, getOrders, updateOrderStatus } from '../controllers/orderController.js';
+import { createOrder, getOrders, updateOrderStatus, getMyOrders } from '../controllers/orderController.js';
 import { verifyToken, isBuyer, isFarmer } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -7,6 +7,9 @@ const router = express.Router();
 router.route('/')
   .post(verifyToken, isBuyer, createOrder)
   .get(verifyToken, getOrders);
+
+router.route('/my-orders')
+  .get(verifyToken, getMyOrders);
 
 router.route('/:id/status')
   .patch(verifyToken, isFarmer, updateOrderStatus);

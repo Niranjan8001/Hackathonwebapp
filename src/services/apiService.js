@@ -35,7 +35,7 @@ const getBaseUrl = () => {
 };
 
 const API_BASE_URL = getBaseUrl();
-const DEFAULT_TIMEOUT = 8000; // 8 seconds
+const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 2;
 
 /**
@@ -83,10 +83,12 @@ const fetchWithRetry = async (endpoint, options = {}, retries = MAX_RETRIES, bac
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+  ...(options.body instanceof FormData
+    ? {}
+    : { "Content-Type": "application/json" }),
+  ...options.headers,
+},
+});
 
     clearTimeout(timeoutId);
 
@@ -154,25 +156,40 @@ const fetchWithRetry = async (endpoint, options = {}, retries = MAX_RETRIES, bac
  * Centralized API Service
  */
 export const apiService = {
-  getProducts: async () => {
-    return fetchWithRetry('/products');
+  getMyProducts: async (token) => {
+    return fetchWithRetry('/products/my-products', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+
+  getCategories: async () => {
+    return fetchWithRetry('/products/categories');
+  },
+
+  getMyOrders: async (token) => {
+    return fetchWithRetry('/orders/my-orders', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
   },
 
   getProductsByFarmer: async (farmerId) => {
-    return fetchWithRetry(`/products?farmerId=${farmerId}`);
+    return fetchWithRetry(`/products?owner=${farmerId}`);
   },
 
   addProduct: async (productData, token) => {
     return fetchWithRetry('/products', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(productData)
+      body: productData instanceof FormData ? productData : JSON.stringify(productData)
     });
   },
 
-  // Add more API methods as needed
   getMe: async (token) => {
     return fetchWithRetry('/auth/me', {
       headers: {
@@ -189,47 +206,47 @@ export const apiService = {
     });
   },
 
-  getEarnings: async (token) => {
-    // If backend doesn't have this yet, it should return mock-like 0. 
-    // We will just return empty for now, FarmerContext will handle it.
-    try {
-      return await fetchWithRetry('/earnings', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (e) {
-      // Graceful fallback if endpoint doesn't exist
-      return { success: true, data: { total: 0, weekly: 0 } };
-    }
+  login: async (email, password) => {
+    return fetchWithRetry('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
   },
 
-  checkHealth: async () => {
-    try {
-      await fetchWithRetry('/health', { timeout: 3000 });
-      return true;
-    } catch (e) {
-      return false;
-    }
+  register: async (userData) => {
+    return fetchWithRetry('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
   },
-  login: async (data) => {
-  return fetchWithRetry('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-},
 
-register: async (data) => {
-  return fetchWithRetry('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-},
+  getReviews: async (token) => {
+    return fetchWithRetry('/reviews/my-reviews', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
 
-firebaseLogin: async (token) => {
-  return fetchWithRetry('/auth/firebase-login', {
-    method: 'POST',
-    body: JSON.stringify({ token })
-  });
-}
+  replyToReview: async (reviewId, reply, token) => {
+    return fetchWithRetry(`/reviews/${reviewId}/reply`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ reply })
+    });
+  },
+
+  updateProfile: async (profileData, token) => {
+    return fetchWithRetry('/auth/update-profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData)
+    });
+  }
 };
 
 

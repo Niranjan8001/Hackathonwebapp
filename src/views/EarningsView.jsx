@@ -1,30 +1,46 @@
 import React from 'react';
-import { DesktopLayout } from '../components/layout/DesktopLayout';
+import { GlassLayout } from '../components/layout/GlassLayout';
 import { EarningsHeader } from '../components/earnings/EarningsHeader';
 import { EarningsStatCards } from '../components/earnings/EarningsStatCards';
 import { EarningsCharts } from '../components/earnings/EarningsCharts';
 import { EarningsTable } from '../components/earnings/EarningsTable';
-import { EarningsRightPanel } from '../components/earnings/EarningsRightPanel';
+import { EarningsSummaryPie } from '../components/earnings/EarningsSummaryPie';
+import { WithdrawNowCard } from '../components/earnings/WithdrawNowCard';
+import { PayoutHistory } from '../components/earnings/PayoutHistory';
 
 export const EarningsView = () => {
   return (
-    <DesktopLayout>
-      <div className="px-4 md:px-8 pb-8 flex flex-col lg:flex-row gap-8 mt-6">
+    <GlassLayout>
+      <div className="flex flex-col gap-6 lg:gap-8 max-w-7xl mx-auto">
         
-        {/* Left Content Column */}
-        <div className="flex-1 min-w-0">
+        {/* TOP HEADER & STATS */}
+        <div className="space-y-6">
           <EarningsHeader />
           <EarningsStatCards />
-          <EarningsCharts />
-          <EarningsTable />
         </div>
 
-        {/* Right Panel Column */}
-        <div className="w-full lg:w-80 flex-shrink-0">
-          <EarningsRightPanel />
+        {/* MIDDLE SECTION: MAIN CHART & PIE CHART */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2">
+            <EarningsCharts />
+          </div>
+          <div className="lg:col-span-1">
+            <EarningsSummaryPie />
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION: TRANSACTIONS & PAYOUTS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
+          <div className="lg:col-span-2">
+            <EarningsTable />
+          </div>
+          <div className="lg:col-span-1 space-y-6 lg:space-y-8">
+            <WithdrawNowCard />
+            <PayoutHistory />
+          </div>
         </div>
 
       </div>
-    </DesktopLayout>
+    </GlassLayout>
   );
 };

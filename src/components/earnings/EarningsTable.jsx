@@ -1,85 +1,79 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFarmerContext } from '../../context/FarmerContext';
 
-export const EarningsTable = () => {
-  const { orders = [] } = useFarmerContext();
+const Skeleton = ({ className }) => (
+  <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />
+);
 
-  const transactions = orders.map((o) => ({
-    id: `#ORD${o.id || Math.floor(Math.random()*10000)}`,
-    date: new Date(o.date || o.createdAt || Date.now()).toLocaleDateString(),
-    description: `Payment for Order #ORD${o.id}`,
-    amount: `₹${o.total || o.totalAmount || 0}`,
-    type: 'Product Sale',
-    status: o.status || 'Completed',
-    isNegative: false
-  }));
+export const EarningsTable = () => {
+  const { realOrders = [], earningsLoading } = useFarmerContext();
+  
+  if (earningsLoading) {
+    return (
+      <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full min-h-[400px]">
+        <Skeleton className="w-48 h-8 mb-8" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-full h-16" />)}
+        </div>
+      </div>
+    );
+  }
+
+  const transactions = realOrders.map(o => ({
+    id: `#ORD${o._id?.slice(-5).toUpperCase() || 'XXXXX'}`,
+    date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    customer: o.buyer?.name || 'Customer',
+    amount: `₹${o.totalAmount?.toLocaleString() || 0}`,
+    status: o.status === 'Pending' ? 'Pending' : (o.status === 'Cancelled' ? 'Cancelled' : 'Completed')
+  })).slice(0, 5);
 
   return (
-    <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl overflow-hidden mt-6 hover-card opacity-0 animate-fade-in-up" style={{ animationDelay: '1.0s' }}>
-      <div className="p-5 border-b border-slate-100 dark:border-[#334155]">
-        <h3 className="font-bold text-slate-800 dark:text-[#F8FAFC]">Earnings Transactions</h3>
+    <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full shadow-2xl flex flex-col opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h3 className="text-xl font-bold text-white">Recent Transactions</h3>
+          <p className="text-xs text-white/40 mt-1 tracking-widest uppercase font-black">Your latest income activities</p>
+        </div>
+        <button className="text-[10px] font-black uppercase tracking-widest text-green-400 hover:text-green-300 transition-colors">View All</button>
       </div>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+
+      <div className="flex-1 overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left border-separate border-spacing-y-3">
           <thead>
-            <tr className="bg-slate-50/50 dark:bg-[#0F172A]/50 border-b border-slate-100 dark:border-[#334155]">
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Date</th>
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Order ID</th>
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Description</th>
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Amount</th>
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Type</th>
-              <th className="py-3 px-6 text-xs font-medium text-slate-500 dark:text-[#94A3B8]">Status</th>
+            <tr className="text-[10px] font-black uppercase tracking-widest text-white/20">
+              <th className="pb-4 pl-6 font-black">Order ID</th>
+              <th className="pb-4 font-black">Date</th>
+              <th className="pb-4 font-black">Customer</th>
+              <th className="pb-4 font-black">Amount</th>
+              <th className="pb-4 font-black">Status</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.length > 0 ? transactions.map((tx, index) => (
-              <tr key={tx.id} className={`group hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors ${index !== transactions.length - 1 ? 'border-b border-slate-100 dark:border-[#334155]' : ''}`}>
-                <td className="py-4 px-6 text-sm text-slate-600 dark:text-[#CBD5E1]">{tx.date}</td>
-                <td className="py-4 px-6 text-sm font-medium text-slate-800 dark:text-[#F8FAFC]">{tx.id}</td>
-                <td className="py-4 px-6 text-sm text-slate-600 dark:text-[#CBD5E1]">{tx.description}</td>
-                <td className={`py-4 px-6 text-sm font-bold ${tx.isNegative ? 'text-red-500' : 'text-slate-800 dark:text-[#F8FAFC]'}`}>
-                  {tx.amount}
-                </td>
-                <td className="py-4 px-6 text-sm text-slate-600 dark:text-[#CBD5E1]">{tx.type}</td>
-                <td className="py-4 px-6">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                    {tx.status}
+            {transactions.length > 0 ? transactions.map((t, i) => (
+              <tr key={i} className="group bg-white/5 hover:bg-white/10 transition-all cursor-pointer">
+                <td className="py-4 pl-6 rounded-l-2xl text-xs font-bold text-white/60 group-hover:text-green-400 transition-colors">{t.id}</td>
+                <td className="py-4 text-xs font-medium text-white/40">{t.date}</td>
+                <td className="py-4 text-xs font-bold text-white">{t.customer}</td>
+                <td className="py-4 text-xs font-black text-white">{t.amount}</td>
+                <td className="py-4 pr-6 rounded-r-2xl">
+                  <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                    t.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
+                    t.status === 'Pending' ? 'bg-amber-500/10 text-amber-400' :
+                    'bg-red-500/10 text-red-400'
+                  }`}>
+                    {t.status}
                   </span>
                 </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan="6" className="py-8 text-center text-slate-500 dark:text-slate-400 text-sm font-medium">
-                  No transactions found
+                <td colSpan="5" className="py-20 text-center opacity-20">
+                   <p className="text-xs font-black uppercase tracking-widest">No recent transactions found</p>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="p-4 border-t border-slate-100 dark:border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-slate-500 dark:text-[#94A3B8]">
-          Showing <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length > 0 ? 1 : 0}</span> to <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length}</span> of <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length}</span> transactions
-        </p>
-        
-        <div className="flex items-center gap-2">
-          <button className="p-1.5 rounded-md border border-slate-200 dark:border-[#334155] text-slate-400 hover:bg-slate-50 dark:hover:bg-[#1E293B] transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-green-600 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-medium">1</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-transparent text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-sm font-medium transition-colors">2</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-transparent text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-sm font-medium transition-colors">3</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-transparent text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B] text-sm font-medium transition-colors">4</button>
-          <button className="p-1.5 rounded-md border border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B] transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          
-          <button className="ml-4 text-sm font-medium text-green-600 dark:text-green-400 hover:underline">View All Transactions</button>
-        </div>
       </div>
     </div>
   );

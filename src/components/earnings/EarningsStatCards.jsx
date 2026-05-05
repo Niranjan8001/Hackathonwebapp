@@ -1,155 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Wallet, ShoppingCart, TrendingUp, Clock } from 'lucide-react';
+import { Wallet, Clock, Landmark, TrendingUp, ArrowUpRight } from 'lucide-react';
 import { useFarmerContext } from '../../context/FarmerContext';
 
-const CountUp = ({ end, duration = 1000, prefix = "", suffix = "" }) => {
+const CountUp = ({ end, prefix = "₹" }) => {
   const [count, setCount] = useState(0);
-
   useEffect(() => {
-    let startTime = null;
-    const endValue = typeof end === 'string' ? parseFloat(end.replace(/[₹,]/g, '')) : end;
-    
-    const step = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const currentCount = Math.floor(progress * endValue);
-      setCount(currentCount);
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
+    let start = 0;
+    const duration = 1000;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
       }
-    };
-    window.requestAnimationFrame(step);
-  }, [end, duration]);
-
-  const formatValue = (val) => {
-    return prefix + val.toLocaleString() + suffix;
-  };
-
-  return <span>{formatValue(count)}</span>;
+    }, 16);
+    return () => clearInterval(timer);
+  }, [end]);
+  return <span>{prefix}{count.toLocaleString()}</span>;
 };
 
-const Sparkline = () => (
-  <div className="h-10 mt-4 w-full opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-    <svg viewBox="0 0 100 30" className="w-full h-full preserve-aspect-ratio-none">
-      <path 
-        d="M0,25 C10,20 20,28 30,15 C40,5 50,15 60,10 C70,5 80,20 90,5 L100,0 L100,30 L0,30 Z" 
-        fill="url(#greenGradient)" 
-        opacity="0.2"
-      />
-      <path 
-        d="M0,25 C10,20 20,28 30,15 C40,5 50,15 60,10 C70,5 80,20 90,5 L100,0" 
-        fill="none" 
-        stroke="#16a34a" 
-        strokeWidth="2"
-        strokeDasharray="1000"
-        strokeDashoffset="1000"
-        className="animate-draw"
-        style={{ animationDelay: '0.8s' }}
-      />
-      <defs>
-        <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#16a34a" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#16a34a" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
-  </div>
+const Skeleton = ({ className }) => (
+  <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />
 );
 
-const Card = ({ title, value, change, icon: Icon, iconColor, bgColor, hasSparkline, extraText, delay }) => {
-  const isCurrency = value.startsWith('₹');
-  const numericValue = value;
-
-  return (
-    <div 
-      className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl p-5 flex flex-col justify-between hover-card opacity-0 animate-fade-in-up"
-      style={{ animationDelay: delay }}
-    >
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`p-2 rounded-lg ${bgColor} ${iconColor} transition-transform duration-300 group-hover:scale-110`}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <span className="text-sm font-medium text-slate-600 dark:text-[#94A3B8]">{title}</span>
-      </div>
-      
-      <div>
-        <h3 className="text-2xl font-bold text-slate-800 dark:text-[#F8FAFC]">
-          <CountUp end={numericValue} prefix={isCurrency ? "₹" : ""} />
-        </h3>
-        {change && (
-          <p className="text-xs mt-1">
-            <span className="text-green-600 dark:text-green-400 font-medium">{change}</span>
-            <span className="text-slate-500 dark:text-[#94A3B8]"> vs last month</span>
-          </p>
-        )}
-        {extraText && (
-          <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">{extraText}</p>
-        )}
-      </div>
-      
-      {hasSparkline && <Sparkline />}
-    </div>
-  );
-};
-
 export const EarningsStatCards = () => {
-  const { totalEarnings, orders = [] } = useFarmerContext();
-  const netEarnings = totalEarnings * 0.9; // example calculation
-  const pendingPayout = orders.filter(o => o.status === 'Pending').reduce((sum, o) => sum + (o.total || o.totalAmount || 0), 0);
-  const pendingOrdersCount = orders.filter(o => o.status === 'Pending').length;
-  const avgOrderValue = orders.length > 0 ? (totalEarnings / orders.length).toFixed(0) : 0;
+  const { realEarnings, realOrders = [], earningsLoading } = useFarmerContext();
+  
+  if (earningsLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 min-h-[180px]">
+             <div className="flex items-center gap-4 mb-6">
+                <Skeleton className="w-12 h-12 rounded-2xl" />
+                <Skeleton className="w-24 h-4" />
+             </div>
+             <Skeleton className="w-32 h-10 mb-4" />
+             <Skeleton className="w-20 h-3" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const total = realEarnings?.total || 0;
+  const pendingOrders = realOrders.filter(o => o.status === 'Pending' || o.status === 'pending');
+  const pendingAmount = pendingOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  
+  const stats = [
+    { label: 'Total Earnings', value: total, icon: <Wallet />, trend: '+12.5%', color: 'text-green-400' },
+    { label: 'Pending Amount', value: pendingAmount, icon: <Clock />, trend: `${pendingOrders.length} orders`, color: 'text-amber-400' },
+    { label: 'Withdrawn Amount', value: 0, icon: <Landmark />, trend: '0 withdrawals', color: 'text-white/20' },
+    { label: 'This Month', value: total, icon: <TrendingUp />, trend: '+18.3%', color: 'text-green-400' }
+  ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-      <Card 
-        title="Total Earnings" 
-        value={`₹${totalEarnings}`} 
-        change={totalEarnings > 0 ? "+18%" : "0%"} 
-        icon={DollarSign} 
-        iconColor="text-green-600 dark:text-green-400" 
-        bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline={totalEarnings > 0}
-        delay="0.1s"
-      />
-      <Card 
-        title="Net Earnings" 
-        value={`₹${netEarnings}`} 
-        change={netEarnings > 0 ? "+16%" : "0%"} 
-        icon={Wallet} 
-        iconColor="text-green-600 dark:text-green-400" 
-        bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline={netEarnings > 0}
-        delay="0.2s"
-      />
-      <Card 
-        title="Orders" 
-        value={orders.length.toString()} 
-        change={orders.length > 0 ? "+10%" : "0%"} 
-        icon={ShoppingCart} 
-        iconColor="text-green-600 dark:text-green-400" 
-        bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline={orders.length > 0}
-        delay="0.3s"
-      />
-      <Card 
-        title="Average Order Value" 
-        value={`₹${avgOrderValue}`} 
-        change={avgOrderValue > 0 ? "+8%" : "0%"} 
-        icon={TrendingUp} 
-        iconColor="text-green-600 dark:text-green-400" 
-        bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline={avgOrderValue > 0}
-        delay="0.4s"
-      />
-      <Card 
-        title="Pending Payout" 
-        value={`₹${pendingPayout}`} 
-        extraText={`${pendingOrdersCount} orders`}
-        icon={Clock} 
-        iconColor="text-orange-500" 
-        bgColor="bg-orange-50 dark:bg-orange-500/10"
-        delay="0.5s"
-      />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
+      {stats.map((stat, i) => (
+        <div key={i} className="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 hover:bg-white/[0.04] transition-all group relative overflow-hidden flex flex-col justify-between min-h-[180px] shadow-2xl">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform duration-500 text-white/60">
+              {React.cloneElement(stat.icon, { className: 'w-6 h-6' })}
+            </div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/20">{stat.label}</p>
+          </div>
+          
+          <div className="space-y-2 relative z-10">
+            <p className="text-3xl font-black text-white tracking-tight">
+              <CountUp end={stat.value} />
+            </p>
+            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest ${stat.color}`}>
+              {stat.trend.includes('%') && <ArrowUpRight className="w-3 h-3" />}
+              {stat.trend}
+            </div>
+          </div>
+          
+          {/* Subtle Glow */}
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 blur-3xl rounded-full group-hover:bg-white/10 transition-colors" />
+        </div>
+      ))}
     </div>
   );
 };

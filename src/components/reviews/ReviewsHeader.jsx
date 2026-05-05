@@ -1,15 +1,30 @@
 import React from 'react';
-import { Download } from 'lucide-react';
+import { Download, Calendar, Filter, ChevronDown } from 'lucide-react';
 
 export const ReviewsHeader = () => {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-      <div />
+    <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6 mb-8 opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black tracking-tight text-white">Reviews</h1>
+        <p className="text-sm text-white/30 font-medium tracking-wide">Manage and respond to customer reviews</p>
+      </div>
       
-      <button className="flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] text-slate-700 dark:text-[#F8FAFC] px-4 py-2.5 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors shadow-sm text-sm whitespace-nowrap w-full sm:w-auto">
-        <Download className="w-4 h-4" />
-        <span>Export Reviews</span>
-      </button>
+      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 text-white/60 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/10 transition-all">
+          <span>All Products</span>
+          <ChevronDown className="w-3 h-3 opacity-40" />
+        </div>
+
+        <div className="flex items-center gap-6 bg-white/5 border border-white/10 text-white/40 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all min-w-[220px]">
+          <span className="text-white/60">May 1 - May 29, 2025</span>
+          <Calendar className="w-4 h-4 text-white/20 ml-auto" />
+        </div>
+
+        <button className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 text-green-400 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500/20 transition-all shadow-lg shadow-green-500/5">
+          <Download className="w-4 h-4" />
+          <span>Export Reviews</span>
+        </button>
+      </div>
     </div>
   );
 };

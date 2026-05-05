@@ -14,6 +14,7 @@ export const verifyToken = async (req, res, next) => {
 
       // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
+      req.userId = decoded.id;
       
       if (!req.user) {
         return sendResponse(res, 404, false, 'User not found');

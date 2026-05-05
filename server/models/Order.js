@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
-  buyerId: {
+  buyer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  farmerId: {
+  farmer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,

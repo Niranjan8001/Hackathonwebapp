@@ -1,13 +1,20 @@
+import multer from "multer";
 import express from 'express';
-import { createProduct, getProducts, getProductById, deleteProduct } from '../controllers/productController.js';
+import { createProduct, getProducts, getProductById, deleteProduct, getMyProducts } from '../controllers/productController.js';
+import { getCategories } from '../controllers/categoryController.js';
 import { verifyToken, isFarmer } from '../middlewares/authMiddleware.js';
 import upload from '../middlewares/uploadMiddleware.js';
 
+
 const router = express.Router();
+
+router.get('/categories', getCategories);
 
 router.route('/')
   .get(getProducts)
   .post(verifyToken, isFarmer, upload.array('images', 5), createProduct);
+
+router.get('/my-products', verifyToken, getMyProducts);
 
 router.route('/:id')
   .get(getProductById)

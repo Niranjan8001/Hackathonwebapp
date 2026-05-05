@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  farmerId: {
+  owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -23,6 +23,35 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
+  sold: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  views: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  description: String,
+  grade: String,
+  harvestDate: Date,
+  storageInstructions: String,
+  tags: [String],
+  isVisible: {
+    type: Boolean,
+    default: true
+  },
+  deliveryType: {
+    type: String,
+    enum: ['Home Delivery', 'Self Pickup'],
+    default: 'Home Delivery'
+  },
+  deliveryFee: {
+    type: Number,
+    default: 0
+  },
+  deliveryTime: String,
   images: {
     type: [String],
     default: [],

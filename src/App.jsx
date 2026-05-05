@@ -20,12 +20,13 @@ import { NeedHelpView } from './views/NeedHelpView';
 import { OrderDetailView } from './views/OrderDetailView';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, isProfileComplete } = useFarmerContext();
+  const { isAuthenticated, isProfileComplete, justRegistered } = useFarmerContext();
   const location = useLocation();
 
   if (!isAuthenticated) return <Navigate to="/" />;
   
-  if (!isProfileComplete && location.pathname !== '/complete-profile') {
+  // Only force profile completion if they just registered AND profile is incomplete
+  if (justRegistered && !isProfileComplete && location.pathname !== '/complete-profile') {
     return <Navigate to="/complete-profile" />;
   }
   
@@ -91,7 +92,6 @@ const AppRoutes = () => {
 function App() {
   return (
     <FarmerProvider>
-      <div id="recaptcha-container"></div>
       <AppRoutes />
     </FarmerProvider>
   );

@@ -1,68 +1,74 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
-import { auth, googleProvider, signInWithRedirect, getRedirectResult, signInWithPhoneNumber, RecaptchaVerifier } from '../lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-
 import { apiService } from '../services/apiService';
-import { DEMO_PRODUCTS, DEMO_ORDERS, DEMO_EARNINGS } from '../mock/demoData';
 
 const FarmerContext = createContext();
 
 export const useFarmerContext = () => useContext(FarmerContext);
 
 export const FarmerProvider = ({ children }) => {
-  const isMockSessionRef = useRef(false);
   const [isAppReady, setIsAppReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState('English');
   const [currentUser, setCurrentUser] = useState(null);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
   const [isDark, setIsDark] = useState(true);
   
   const [realProducts, setRealProducts] = useState([]);
   const [realOrders, setRealOrders] = useState([]);
+  const [realReviews, setRealReviews] = useState([]);
   const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0 });
+  const [earningsLoading, setEarningsLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isRetrying, setIsRetrying] = useState(false);
 
   const toggleTheme = () => setIsDark(!isDark);
 
-  const getData = useCallback((type) => {
-    // We no longer have isDemoUser logic, but we keep the structure for compatibility
-    switch(type) {
-      case 'products': return realProducts;
-      case 'orders': return realOrders;
-      case 'earnings': return realEarnings;
-      default: return null;
-    }
-  }, [realProducts, realOrders, realEarnings]);
-
   const fetchUserData = async (token) => {
     try {
+      setEarningsLoading(true);
       const profileRes = await apiService.getMe(token);
       
       if (profileRes.success && profileRes.data) {
         setCurrentUser(profileRes.data);
-        setIsProfileComplete(!!profileRes.data.farmName); // Example completion check
+        setIsProfileComplete(!!profileRes.data.farmName); 
         setIsAuthenticated(true);
         
         // Fetch Real Data 
-        const [productsRes, ordersRes, earningsRes] = await Promise.all([
-          apiService.getProductsByFarmer(profileRes.data._id).catch(() => ({ success: true, data: [] })),
-          apiService.getOrders(token).catch(() => ({ success: true, data: [] })),
-          apiService.getEarnings(token).catch(() => ({ success: true, data: { total: 0, weekly: 0 } }))
+        const [productsRes, ordersRes, reviewsRes] = await Promise.all([
+          apiService.getMyProducts(token).catch(() => ({ success: true, data: [] })),
+          apiService.getMyOrders(token).catch(() => ({ success: true, data: [] })),
+          apiService.getReviews(token).catch(() => ({ success: true, data: [] })),
         ]);
 
         if (productsRes.success) setRealProducts(productsRes.data || []);
-        if (ordersRes.success) setRealOrders(ordersRes.data || []);
-        if (earningsRes.success) setRealEarnings(earningsRes.data || { total: 0, weekly: 0 });
+        if (reviewsRes.success) setRealReviews(reviewsRes.data || []);
+        if (ordersRes.success) {
+          const orders = ordersRes.data || [];
+          setRealOrders(orders);
+          
+          // Calculate earnings from completed/delivered orders
+          const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Processing');
+          const totalEarnings = completedOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+          
+          // Weekly earnings (orders from last 7 days)
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const weeklyEarnings = completedOrders
+            .filter(o => new Date(o.createdAt) > sevenDaysAgo)
+            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+            
+          setRealEarnings({ total: totalEarnings, weekly: weeklyEarnings });
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      setIsAuthenticated(false);
+      logout();
     } finally {
       setIsAppReady(true);
+      setLoading(false);
+      setEarningsLoading(false);
     }
   };
 
@@ -79,101 +85,38 @@ export const FarmerProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const [confirmationResult, setConfirmationResult] = useState(null);
-
-  const setupRecaptcha = (containerId = 'recaptcha-container') => {
-    if (window.recaptchaVerifier) return window.recaptchaVerifier;
-
-    try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'invisible',
-        callback: () => console.log('reCAPTCHA verified'),
-        'expired-callback': () => {
-          console.warn('reCAPTCHA expired');
-          window.recaptchaVerifier = null;
-        }
-      });
-      return window.recaptchaVerifier;
-    } catch (err) {
-      console.error('reCAPTCHA initialization error:', err);
-      return null;
-    }
-  };
-
-  const sendOTP = async (phoneNumber) => {
+  const login = async (email, password) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const appVerifier = setupRecaptcha();
-      if (!appVerifier) throw new Error('Failed to initialize reCAPTCHA');
-
-      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-      
-      console.log('DEBUG: Sending OTP to', formattedPhone);
-      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      setConfirmationResult(result);
-      console.log('OTP sent successfully');
-      return true;
-    } catch (err) {
-      console.error('OTP send error:', err);
-      setError({ message: err.message || 'Failed to send OTP', type: 'auth' });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOTP = async (otpCode) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      if (!confirmationResult) throw new Error('No active OTP session');
-      
-      console.log('DEBUG: Verifying OTP...');
-      const result = await confirmationResult.confirm(otpCode);
-      console.log('OTP verified successfully');
-      
-      const firebaseToken = await result.user.getIdToken();
-      console.log('DEBUG: Firebase token received');
-
-      // Sync with Backend
-      const backendRes = await apiService.firebaseLogin(firebaseToken);
-      console.log('DEBUG: Backend response received', backendRes);
-
-      if (backendRes.success) {
-        localStorage.setItem('token', backendRes.data.token);
-        await fetchUserData(backendRes.data.token);
-        return true;
-      } else {
-        throw new Error(backendRes.message || 'Backend authentication failed');
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError({ message: err.message || 'Verification failed', type: 'auth' });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (type = 'google', data = {}) => {
-    // We only support real auth now
-    return false; 
-  };
-
-  const register = async (farmerData) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await apiService.register(farmerData);
+      const res = await apiService.login(email, password);
       if (res.success) {
-        localStorage.setItem("token", res.data.token);
+        localStorage.setItem('token', res.data.token);
         await fetchUserData(res.data.token);
         return true;
       }
-      throw new Error(res.message || 'Registration failed');
+      return false;
+    } catch (err) {
+      console.error('Login error:', err);
+      setError({ message: err.message || 'Login failed', type: 'auth' });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiService.register(userData);
+      if (res.success) {
+        localStorage.setItem("token", res.data.token);
+        setJustRegistered(true);
+        await fetchUserData(res.data.token);
+        return true;
+      }
+      return false;
     } catch (err) {
       console.error("Registration error:", err);
       setError({ message: err.message || 'Registration failed', type: 'auth' });
@@ -186,11 +129,11 @@ export const FarmerProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
+    setJustRegistered(false);
     setCurrentUser(null);
     setRealProducts([]);
     setRealOrders([]);
     setRealEarnings({ total: 0, weekly: 0 });
-    signOut(auth).catch(console.error);
   };
 
   const addProduct = async (productData) => {
@@ -200,7 +143,7 @@ export const FarmerProvider = ({ children }) => {
       const result = await apiService.addProduct(productData, token);
       if (result.success) {
         // Refresh products
-        const productsRes = await apiService.getProductsByFarmer(currentUser._id);
+        const productsRes = await apiService.getMyProducts(token);
         if (productsRes.success) setRealProducts(productsRes.data || []);
         return result.data;
       }
@@ -211,32 +154,51 @@ export const FarmerProvider = ({ children }) => {
     }
   };
 
-  const updateProfileImages = (banner, profile) => {
-    setCurrentUser(prev => ({
-      ...prev,
-      bannerImage: banner || prev.bannerImage,
-      photoURL: profile || prev.photoURL
-    }));
-    setIsProfileComplete(true);
+  const updateProfile = async (profileData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+      const res = await apiService.updateProfile(profileData, token);
+      if (res.success) {
+        setCurrentUser(res.data);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Update profile error:', err);
+      return false;
+    }
   };
 
-  const updateBio = (newBio) => {
-    setCurrentUser(prev => ({
-      ...prev,
-      bio: newBio
-    }));
+  const updateBio = (bio) => updateProfile({ bio });
+  
+  const updateProfileImages = (banner, profile) => {
+    const updates = {};
+    if (banner) updates.bannerImage = banner;
+    if (profile) updates.photoURL = profile;
+    updateProfile(updates).then(() => setIsProfileComplete(true));
   };
 
   const addCertification = (cert) => {
-    setCurrentUser(prev => ({
-      ...prev,
-      certifications: [...(prev.certifications || []), { ...cert, id: Date.now() }]
-    }));
+    updateProfile({ certification: { ...cert, id: Date.now() } });
   };
 
-  const products = getData('products');
-  const orders = getData('orders');
-  const earnings = getData('earnings');
+  const fetchProducts = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setEarningsLoading(true);
+    const res = await apiService.getMyProducts(token);
+    if (res.success) setRealProducts(res.data || []);
+    setEarningsLoading(false);
+  };
+
+  const fetchOrders = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const res = await apiService.getMyOrders(token);
+    if (res.success) setRealOrders(res.data || []);
+  };
 
   return (
     <FarmerContext.Provider value={{
@@ -250,20 +212,25 @@ export const FarmerProvider = ({ children }) => {
       isDark,
       toggleTheme,
       login,
-      sendOTP,
-      verifyOTP,
       register,
       logout,
-      products,
+      justRegistered,
+      setJustRegistered,
+      products: realProducts,
+      orders: realOrders,
       loading,
-      error,
-      addProduct,
-      orders,
-      totalEarnings: earnings?.total || 0,
-      weeklyEarnings: earnings?.weekly || 0,
-      updateProfileImages,
+      earningsLoading,
+      realEarnings,
+      realProducts,
+      realReviews,
+      fetchProducts,
+      fetchOrders,
+      updateProfile,
       updateBio,
-      addCertification
+      updateProfileImages,
+      addCertification,
+      totalEarnings: realEarnings.total,
+      weeklyEarnings: realEarnings.weekly,
     }}>
       {children}
     </FarmerContext.Provider>

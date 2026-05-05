@@ -1,13 +1,14 @@
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import sendResponse from '../utils/response.js';
 
 export const createOrder = async (req, res, next) => {
   try {
-    const { farmerId, products, totalAmount } = req.body;
+    const { farmer, products, totalAmount } = req.body;
 
     const order = await Order.create({
-      buyerId: req.user._id,
-      farmerId,
+      buyer: req.userId,
+      farmer,
       products,
       totalAmount,
     });
@@ -23,19 +24,35 @@ export const getOrders = async (req, res, next) => {
   try {
     let query = {};
     if (req.user.role === 'farmer') {
-      query.farmerId = req.user._id;
+      query.farmer = req.userId;
     } else {
-      query.buyerId = req.user._id;
+      query.buyer = req.userId;
     }
 
     const orders = await Order.find(query)
-      .populate('farmerId', 'name')
-      .populate('buyerId', 'name phone')
+      .populate('farmer', 'name')
+      .populate('buyer', 'name email')
       .populate('products.productId', 'title images');
 
     sendResponse(res, 200, true, 'Orders fetched successfully', orders);
   } catch (error) {
     console.error('DEBUG: Error in getOrders:', error.message);
+    next(error);
+  }
+};
+
+export const getMyOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({
+      $or: [{ buyer: req.userId }, { farmer: req.userId }]
+    })
+    .populate('farmer', 'name')
+    .populate('buyer', 'name email')
+    .populate('products.productId', 'title images');
+
+    sendResponse(res, 200, true, 'My orders fetched successfully', orders);
+  } catch (error) {
+    console.error('DEBUG: Error in getMyOrders:', error.message);
     next(error);
   }
 };
@@ -51,13 +68,28 @@ export const updateOrderStatus = async (req, res, next) => {
       throw new Error('Order not found');
     }
 
-    if (order.farmerId.toString() !== req.user._id.toString()) {
+    if (order.farmer.toString() !== req.userId.toString()) {
       res.status(403);
       throw new Error('Not authorized to update this order');
     }
 
+    const oldStatus = order.status;
     order.status = status;
     await order.save();
+
+    // If order is accepted (changed from Pending to Processing)
+    if (oldStatus === 'pending' || oldStatus === 'Pending') {
+      if (status === 'Processing') {
+        for (const item of order.products) {
+          await Product.findByIdAndUpdate(item.productId, {
+            $inc: { 
+              stock: -item.quantity, 
+              sold: item.quantity 
+            }
+          });
+        }
+      }
+    }
 
     sendResponse(res, 200, true, 'Order status updated successfully', order);
   } catch (error) {

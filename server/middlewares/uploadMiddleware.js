@@ -1,12 +1,12 @@
-import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../config/cloudinary.js';
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinary.js";
 
 const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
+  cloudinary,
   params: {
-    folder: 'farmdirect/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    folder: "products", // folder in cloudinary
+    allowed_formats: ["jpg", "png", "jpeg"],
   },
 });
 

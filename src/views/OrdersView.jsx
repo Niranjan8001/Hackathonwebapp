@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GlassLayout } from '../components/layout/GlassLayout';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -22,7 +22,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFarmerContext } from '../context/FarmerContext';
 
 export const OrdersView = () => {
-  const { orders = [] } = useFarmerContext();
+  const { orders = [], fetchOrders } = useFarmerContext();
+  
+  useEffect(() => {
+    if (fetchOrders) fetchOrders();
+  }, []);
   const [activeTab, setActiveTab] = useState('All Orders');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);

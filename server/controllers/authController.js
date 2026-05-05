@@ -11,69 +11,22 @@ const generateToken = (id) => {
   });
 };
 
-// ✅ FIREBASE LOGIN/REGISTER
-export const firebaseLogin = async (req, res, next) => {
-  try {
-    const { token } = req.body;
-    
-    if (!token) {
-      return sendResponse(res, 400, false, 'Firebase token is required');
-    }
-
-    // Verify Firebase Token
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const { phone_number, uid } = decodedToken;
-
-    if (!phone_number) {
-      return sendResponse(res, 400, false, 'Phone number not found in token');
-    }
-
-    // Format phone number to match DB if needed (usually it's +91...)
-    // const formattedPhone = phone_number.replace(/^\+91/, ''); // Depends on your DB format
-
-    // Find or Create User
-    let user = await User.findOne({ phone: phone_number });
-
-    if (!user) {
-      console.log(`DEBUG: Creating new user for phone ${phone_number}`);
-      user = await User.create({
-        phone: phone_number,
-        name: 'Farmer', // Default name
-        role: 'farmer'
-      });
-    }
-
-    console.log(`DEBUG: Firebase login success for ${phone_number}`);
-
-    sendResponse(res, 200, true, 'Login success', {
-      _id: user._id,
-      name: user.name,
-      phone: user.phone,
-      token: generateToken(user._id)
-    });
-
-  } catch (error) {
-    console.error('DEBUG: FIREBASE LOGIN ERROR', error.message);
-    return sendResponse(res, 401, false, 'Invalid Firebase token');
-  }
-};
-
 // ✅ REGISTER
 export const registerUser = async (req, res, next) => {
   try {
     console.log("DEBUG: REGISTER ATTEMPT", req.body);
 
-    const { name, phone, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Validation
-    if (!name || !phone || !password) {
-      return sendResponse(res, 400, false, 'Please provide name, phone, and password');
+    if (!name || !email || !password) {
+      return sendResponse(res, 400, false, 'Please provide name, email, and password');
     }
 
-    const userExists = await User.findOne({ phone });
+    const userExists = await User.findOne({ email: email.toLowerCase() });
 
     if (userExists) {
-      console.log("DEBUG: REGISTER FAILED - User exists", phone);
+      console.log("DEBUG: REGISTER FAILED - User exists", email);
       return sendResponse(res, 400, false, 'User already exists');
     }
 
@@ -81,16 +34,18 @@ export const registerUser = async (req, res, next) => {
 
     const user = await User.create({
       name,
-      phone,
-      password: hashedPassword
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: role || 'farmer'
     });
 
-    console.log("DEBUG: USER CREATED SUCCESSFULLY", user.phone);
+    console.log("DEBUG: USER CREATED SUCCESSFULLY", user.email);
 
     sendResponse(res, 201, true, 'User registered successfully', {
       _id: user._id,
       name: user.name,
-      phone: user.phone,
+      email: user.email,
+      role: user.role,
       token: generateToken(user._id)
     });
 
@@ -99,30 +54,32 @@ export const registerUser = async (req, res, next) => {
     next(error);
   }
 };
+
 // ✅ LOGIN
 export const loginUser = async (req, res, next) => {
   try {
-    console.log("DEBUG: LOGIN ATTEMPT", req.body.phone);
+    console.log("DEBUG: LOGIN ATTEMPT", req.body.email);
 
-    const { phone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!phone || !password) {
-      return sendResponse(res, 400, false, 'Please provide phone and password');
+    if (!email || !password) {
+      return sendResponse(res, 400, false, 'Please provide email and password');
     }
 
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (user && await bcrypt.compare(password, user.password)) {
-      console.log("DEBUG: LOGIN SUCCESS", phone);
+      console.log("DEBUG: LOGIN SUCCESS", email);
 
       sendResponse(res, 200, true, 'Login success', {
         _id: user._id,
         name: user.name,
-        phone: user.phone,
+        email: user.email,
+        role: user.role,
         token: generateToken(user._id)
       });
     } else {
-      console.log("DEBUG: LOGIN FAILED", phone);
+      console.log("DEBUG: LOGIN FAILED", email);
       sendResponse(res, 401, false, 'Invalid credentials');
     }
 
@@ -133,10 +90,38 @@ export const loginUser = async (req, res, next) => {
 };
 export const getMe = async (req, res) => {
   try {
-    console.log("DEBUG: FETCHING PROFILE FOR", req.user.phone);
+    console.log("DEBUG: FETCHING PROFILE FOR", req.user.email);
     sendResponse(res, 200, true, "User profile fetched successfully", req.user);
   } catch (error) {
     console.error("DEBUG: GET_ME ERROR", error.message);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    const updates = req.body;
+    
+    // Handle specific array pushes if needed, or just overwrite
+    // For certifications, we might want to push
+    if (updates.certification) {
+      user.certifications.push(updates.certification);
+      delete updates.certification;
+    }
+
+    Object.keys(updates).forEach(key => {
+      user[key] = updates[key];
+    });
+
+    await user.save();
+
+    sendResponse(res, 200, true, 'Profile updated successfully', user);
+  } catch (error) {
+    next(error);
   }
 };

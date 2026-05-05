@@ -1,155 +1,118 @@
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useFarmerContext } from '../../context/FarmerContext';
 
-const EarningsLineChart = () => (
-  <div className="w-full h-[250px] relative mt-4">
-    <svg viewBox="0 0 800 250" className="w-full h-full preserve-aspect-ratio-none">
-      {/* Grid Lines */}
-      <line x1="40" y1="20" x2="800" y2="20" stroke="currentColor" strokeDasharray="4 4" className="text-slate-100 dark:text-[#334155] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.1s' }} strokeWidth="1" />
-      <line x1="40" y1="90" x2="800" y2="90" stroke="currentColor" strokeDasharray="4 4" className="text-slate-100 dark:text-[#334155] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }} strokeWidth="1" />
-      <line x1="40" y1="160" x2="800" y2="160" stroke="currentColor" strokeDasharray="4 4" className="text-slate-100 dark:text-[#334155] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s' }} strokeWidth="1" />
-      <line x1="40" y1="230" x2="800" y2="230" stroke="currentColor" className="text-slate-200 dark:text-[#334155] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s' }} strokeWidth="1" />
-      
-      {/* Y Axis Labels */}
-      <text x="30" y="25" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.1s' }} textAnchor="end">₹30K</text>
-      <text x="30" y="95" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }} textAnchor="end">₹20K</text>
-      <text x="30" y="165" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s' }} textAnchor="end">₹10K</text>
-      <text x="30" y="235" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s' }} textAnchor="end">₹0</text>
-
-      {/* X Axis Labels */}
-      <text x="60" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>May 1</text>
-      <text x="180" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>May 6</text>
-      <text x="300" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.7s' }}>May 11</text>
-      <text x="420" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>May 16</text>
-      <text x="540" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '0.9s' }}>May 21</text>
-      <text x="660" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '1.0s' }}>May 26</text>
-      <text x="760" y="250" fill="currentColor" className="text-[10px] text-slate-400 dark:text-[#94A3B8] opacity-0 animate-fade-in-up" style={{ animationDelay: '1.1s' }}>May 31</text>
-
-      {/* Line Chart Area */}
-      <path 
-        d="M40,210 L100,160 L140,165 L200,100 L260,180 L300,160 L350,100 L400,170 L460,180 L520,130 L580,180 L640,140 L700,145 L780,150 L800,150 L800,230 L40,230 Z" 
-        fill="url(#chartGradient)" 
-        opacity="0"
-        className="animate-fade-in-up"
-        style={{ animationDelay: '1.2s' }}
-      />
-      <path 
-        d="M40,210 L100,160 L140,165 L200,100 L260,180 L300,160 L350,100 L400,170 L460,180 L520,130 L580,180 L640,140 L700,145 L780,150 L800,150" 
-        fill="none" 
-        stroke="#16a34a" 
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray="2000"
-        strokeDashoffset="2000"
-        className="animate-draw"
-        style={{ animationDelay: '0.5s' }}
-      />
-      
-      {/* Data Points (Dots on peaks) */}
-      <circle cx="200" cy="100" r="4" fill="#ffffff" stroke="#16a34a" strokeWidth="2" className="opacity-0 animate-scale-in" style={{ animationDelay: '0.8s' }} />
-      <circle cx="350" cy="100" r="4" fill="#ffffff" stroke="#16a34a" strokeWidth="2" className="opacity-0 animate-scale-in" style={{ animationDelay: '1.1s' }} />
-      <circle cx="520" cy="130" r="4" fill="#ffffff" stroke="#16a34a" strokeWidth="2" className="opacity-0 animate-scale-in" style={{ animationDelay: '1.4s' }} />
-      <circle cx="640" cy="140" r="4" fill="#ffffff" stroke="#16a34a" strokeWidth="2" className="opacity-0 animate-scale-in" style={{ animationDelay: '1.7s' }} />
-
-      <defs>
-        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#16a34a" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#16a34a" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
-  </div>
-);
-
-const DonutChart = () => (
-  <div className="relative w-40 h-40">
-    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 animate-fade-in-up">
-      {/* Background ring */}
-      <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" className="text-slate-100 dark:text-[#334155]" strokeWidth="20" />
-      
-      {/* 95% Product Sales (Green) */}
-      <circle 
-        cx="50" cy="50" r="40" fill="none" stroke="#16a34a" strokeWidth="20" 
-        strokeDasharray="251.2" strokeDashoffset="12.56"
-        className="animate-sweep"
-        style={{ animationDelay: '0.5s' }}
-      />
-      
-      {/* 4% Delivery Charges (Light Green) */}
-      <circle 
-        cx="50" cy="50" r="40" fill="none" stroke="#86efac" strokeWidth="20" 
-        strokeDasharray="251.2" strokeDashoffset="241.152" 
-        className="origin-center rotate-[342deg] animate-sweep"
-        style={{ animationDelay: '0.8s' }}
-      />
-      
-      {/* 1% Other (Amber) */}
-      <circle 
-        cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="20" 
-        strokeDasharray="251.2" strokeDashoffset="248.688" 
-        className="origin-center rotate-[356.4deg] animate-sweep"
-        style={{ animationDelay: '1.1s' }}
-      />
-    </svg>
-  </div>
+const Skeleton = ({ className }) => (
+  <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />
 );
 
 export const EarningsCharts = () => {
-  return (
-    <div className="flex flex-col lg:flex-row gap-6 mb-6">
-      
-      {/* Earnings Overview Line Chart */}
-      <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl p-5 flex-grow hover-card opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-slate-800 dark:text-[#F8FAFC]">Earnings Overview</h3>
-          <button className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-[#94A3B8] border border-slate-200 dark:border-[#334155] rounded-md px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors">
-            Daily <ChevronDown className="w-3.5 h-3.5" />
-          </button>
+  const { realOrders = [], earningsLoading } = useFarmerContext();
+  const hasData = realOrders.length > 0;
+
+  if (earningsLoading) {
+    return (
+      <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full min-h-[450px]">
+        <div className="flex items-center justify-between mb-10">
+          <Skeleton className="w-48 h-8" />
+          <Skeleton className="w-32 h-10" />
         </div>
-        <EarningsLineChart />
+        <Skeleton className="w-full h-64" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full flex flex-col min-h-[450px] shadow-2xl opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
+      <div className="flex items-center justify-between mb-10">
+        <div>
+          <h3 className="text-xl font-bold text-white">Earnings Overview</h3>
+          <p className="text-xs text-white/40 mt-1 tracking-wider uppercase font-black">Monthly performance tracking</p>
+        </div>
+        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+          {['Daily', 'Weekly', 'Monthly'].map(tab => (
+            <button 
+              key={tab}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                tab === 'Monthly' ? 'bg-white/10 text-white shadow-xl' : 'text-white/20 hover:text-white/40'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Earnings Breakdown Donut Chart */}
-      <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl p-5 lg:w-[350px] flex-shrink-0 flex flex-col hover-card opacity-0 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
-        <h3 className="font-bold text-slate-800 dark:text-[#F8FAFC] mb-6">Earnings Breakdown</h3>
-        
-        <div className="flex items-center justify-center gap-6 flex-grow">
-          <DonutChart />
-          
-          <div className="space-y-4">
-            <div className="flex items-start gap-2 opacity-0 animate-fade-in-up" style={{ animationDelay: '1.0s' }}>
-              <div className="w-3 h-3 rounded-full bg-green-600 mt-1 shrink-0"></div>
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-[#F8FAFC]">Product Sales</p>
-                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">₹24,560 (95%)</p>
-              </div>
+      <div className="flex-1 relative mt-4">
+        {!hasData ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 text-center">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center border border-dashed border-white/10">
+              <span className="text-3xl opacity-50">📊</span>
             </div>
-            
-            <div className="flex items-start gap-2 opacity-0 animate-fade-in-up" style={{ animationDelay: '1.1s' }}>
-              <div className="w-3 h-3 rounded-full bg-green-300 mt-1 shrink-0"></div>
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-[#F8FAFC]">Delivery Charges</p>
-                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">₹980 (4%)</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-2 opacity-0 animate-fade-in-up" style={{ animationDelay: '1.2s' }}>
-              <div className="w-3 h-3 rounded-full bg-amber-500 mt-1 shrink-0"></div>
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-[#F8FAFC]">Other Income</p>
-                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">₹130 (1%)</p>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white/60">Insufficient Data</p>
+              <p className="text-[10px] text-white/20 mt-1 max-w-[240px] leading-relaxed">Chart data will appear here once you complete your first orders.</p>
             </div>
           </div>
-        </div>
-        
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-[#334155] flex justify-between items-center opacity-0 animate-fade-in-up" style={{ animationDelay: '1.3s' }}>
-          <span className="font-medium text-slate-600 dark:text-[#94A3B8]">Total</span>
-          <span className="font-bold text-lg text-slate-800 dark:text-[#F8FAFC]">₹25,670</span>
-        </div>
+        ) : (
+          <div className="w-full h-full flex flex-col group">
+             <div className="flex-1 relative px-2 overflow-hidden">
+                <svg className="w-full h-full" viewBox="0 0 1000 400" preserveAspectRatio="none">
+                  <path 
+                    d="M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180 L 950 400 L 50 400 Z" 
+                    fill="url(#chartGradient)" 
+                    className="transition-all duration-1000"
+                  />
+                  <path 
+                    d="M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="3" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    strokeDasharray="2000"
+                    strokeDashoffset="2000"
+                    className="animate-draw-line"
+                  />
+                  {[
+                    {x: 50, y: 350}, {x: 200, y: 300}, {x: 350, y: 320}, 
+                    {x: 500, y: 250}, {x: 650, y: 280}, {x: 800, y: 220}, {x: 950, y: 180}
+                  ].map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="6" fill="#22c55e" className="hover:r-8 transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                  ))}
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+             </div>
+             <div className="flex justify-between px-2 mt-6 text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+               <span>Dec '24</span>
+               <span>Jan '25</span>
+               <span>Feb '25</span>
+               <span>Mar '25</span>
+               <span>Apr '25</span>
+               <span>May '25</span>
+             </div>
+          </div>
+        )}
       </div>
 
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 mt-12 pt-8 border-t border-white/5">
+        <ChartStat label="This Month" value="₹18,750" color="text-green-400" />
+        <ChartStat label="Total Earnings" value="₹48,650" color="text-white" />
+        <ChartStat label="Total Withdrawn" value="₹32,400" color="text-white" />
+        <ChartStat label="Pending Amount" value="₹5,250" color="text-white" />
+        <ChartStat label="Last Month" value="₹3,280" color="text-white" />
+      </div>
     </div>
   );
 };
+
+const ChartStat = ({ label, value, color }) => (
+  <div className="space-y-1 group">
+    <p className={`text-base lg:text-lg font-black tracking-tight ${color} group-hover:scale-105 transition-transform origin-left`}>{value}</p>
+    <p className="text-[10px] font-bold text-white/10 group-hover:text-white/20 uppercase tracking-widest transition-colors whitespace-nowrap">{label}</p>
+  </div>
+);
