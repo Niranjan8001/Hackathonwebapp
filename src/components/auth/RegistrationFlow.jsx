@@ -400,7 +400,7 @@ const AuthInput = ({ icon, placeholder, type = "text", value, onChange, maxLengt
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full pl-10 lg:pl-12 pr-4 py-2.5 lg:py-3.5 bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white text-sm lg:text-base placeholder-white/20 focus:outline-none focus:border-green-500/50 transition-all backdrop-blur-md font-medium"
+      className="w-full pl-12 lg:pl-12 pr-4 py-2.5 lg:py-3.5 bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white text-sm lg:text-base placeholder-white/20 focus:outline-none focus:border-green-500/50 transition-all backdrop-blur-md font-medium"
     />
   </div>
 );
