@@ -219,34 +219,40 @@ export const FarmerProvider = ({ children }) => {
     }
   };
 
-  const register = async (farmerData) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // In a real app, you'd call apiService.register(farmerData)
-      // and it would create the user in MongoDB with isDemoUser: false
-      
-      isMockSessionRef.current = true;
-      setIsAuthenticated(true);
-      setCurrentUser({
-        ...farmerData,
-        displayName: farmerData.name || 'New Farmer',
-        email: farmerData.email || 'farmer@demo.com',
-        isDemoUser: false, 
-        photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      });
-      setIsProfileComplete(false);
-      
-      return true;
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError({ message: 'Registration failed. Please try again.', type: 'auth' });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+const register = async (farmerData) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    // 🔥 REAL BACKEND CALL
+    const res = await apiService.register(farmerData);
+
+    console.log("REGISTER RESPONSE:", res);
+
+    // Save token
+    localStorage.setItem("token", res.data.token);
+
+    // Update app state
+    isMockSessionRef.current = false;
+    setIsAuthenticated(true);
+    setCurrentUser(res.data);
+
+    return true;
+
+  } catch (err) {
+    console.error("Registration error:", err);
+
+    setError({
+      message: err.message || 'Registration failed',
+      type: 'auth'
+    });
+
+    return false;
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   const updateProfileImages = (banner, profile) => {
     setCurrentUser(prev => ({

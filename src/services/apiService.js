@@ -209,5 +209,20 @@ export const apiService = {
     } catch (e) {
       return false;
     }
-  }
+  },
+  login: async (data) => {
+  return fetchWithRetry('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+},
+
+register: async (data) => {
+  return fetchWithRetry('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
 };
+
+

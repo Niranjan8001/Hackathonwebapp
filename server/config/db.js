@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { setMockMode } from './mockConfig.js';
 
 const connectDB = async () => {
   try {
@@ -10,7 +9,7 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Database Connection Failed: ${error.message}`);
-    setMockMode(true);
+    process.exit(1);
   }
 };
 

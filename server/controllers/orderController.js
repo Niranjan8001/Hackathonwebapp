@@ -5,20 +5,6 @@ export const createOrder = async (req, res, next) => {
   try {
     const { farmerId, products, totalAmount } = req.body;
 
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 201, true, 'Order created successfully (DEMO)', {
-        _id: `demo_${Date.now()}`,
-        buyerId: req.user._id,
-        farmerId,
-        products,
-        totalAmount,
-        status: 'pending',
-        paymentStatus: 'pending',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
-
     const order = await Order.create({
       buyerId: req.user._id,
       farmerId,
@@ -28,16 +14,13 @@ export const createOrder = async (req, res, next) => {
 
     sendResponse(res, 201, true, 'Order created successfully', order);
   } catch (error) {
+    console.error('DEBUG: Error in createOrder:', error.message);
     next(error);
   }
 };
 
 export const getOrders = async (req, res, next) => {
   try {
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 200, true, 'Demo mode active - fetching from frontend', []);
-    }
-
     let query = {};
     if (req.user.role === 'farmer') {
       query.farmerId = req.user._id;
@@ -52,6 +35,7 @@ export const getOrders = async (req, res, next) => {
 
     sendResponse(res, 200, true, 'Orders fetched successfully', orders);
   } catch (error) {
+    console.error('DEBUG: Error in getOrders:', error.message);
     next(error);
   }
 };
@@ -59,9 +43,6 @@ export const getOrders = async (req, res, next) => {
 export const updateOrderStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 200, true, 'Order status updated successfully (DEMO)', { status });
-    }
 
     const order = await Order.findById(req.params.id);
 
@@ -80,6 +61,7 @@ export const updateOrderStatus = async (req, res, next) => {
 
     sendResponse(res, 200, true, 'Order status updated successfully', order);
   } catch (error) {
+    console.error('DEBUG: Error in updateOrderStatus:', error.message);
     next(error);
   }
 };

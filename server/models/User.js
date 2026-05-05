@@ -5,38 +5,51 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  email: {
-    type: String,
-    required: false,
-    unique: true,
-    sparse: true,
-  },
+
   phone: {
     type: String,
+    required: true,
+    unique: true,
+  },
+
+  password: {
+    type: String,
     required: false,
   },
+
+  // 🔥 NEW FIELDS (IMPORTANT)
+  farmName: {
+    type: String,
+  },
+
+  locationText: {
+    type: String,
+  },
+
+  scale: {
+    type: String,
+  },
+
+  crops: {
+    type: [String],
+  },
+
+  organic: {
+    type: Boolean,
+  },
+
+  // existing
   isDemoUser: {
     type: Boolean,
     default: false,
   },
+
   role: {
     type: String,
     enum: ['farmer', 'buyer'],
-    default: 'buyer',
+    default: 'farmer',
   },
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point',
-    },
-    coordinates: {
-      type: [Number],
-      default: [0, 0],
-    },
-  },
-}, { timestamps: true });
 
-userSchema.index({ location: '2dsphere' });
+}, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

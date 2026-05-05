@@ -6,22 +6,8 @@ export const createProduct = async (req, res, next) => {
     const { name, title, price, category, stock, quantity } = req.body;
     const images = req.files ? req.files.map(file => file.path) : [];
 
-    console.log('Creating product with data:', req.body);
-    console.log('User from token:', req.user);
-
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 201, true, 'Product created successfully (DEMO)', {
-        _id: `demo_${Date.now()}`,
-        farmerId: req.user._id,
-        title: title || name,
-        price: Number(price),
-        category,
-        stock: Number(stock || quantity || 0),
-        images,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
+    console.log('DEBUG: Creating product with data:', req.body);
+    console.log('DEBUG: User from token:', req.user?._id);
 
     const product = await Product.create({
       farmerId: req.user._id,
@@ -32,10 +18,10 @@ export const createProduct = async (req, res, next) => {
       images,
     });
 
-    console.log('Product created successfully:', product);
+    console.log('DEBUG: Product created successfully:', product._id);
     sendResponse(res, 201, true, 'Product created successfully', product);
   } catch (error) {
-    console.error('Error in createProduct:', error);
+    console.error('DEBUG: Error in createProduct:', error.message);
     next(error);
   }
 };
@@ -44,26 +30,18 @@ export const getProducts = async (req, res, next) => {
   try {
     const { farmerId } = req.query;
 
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 200, true, 'Demo mode active - fetching from frontend', []);
-    }
-
     const filter = farmerId ? { farmerId } : {};
     
     const products = await Product.find(filter).populate('farmerId', 'name location');
     sendResponse(res, 200, true, 'Products fetched successfully', products);
   } catch (error) {
+    console.error('DEBUG: Error in getProducts:', error.message);
     next(error);
   }
 };
 
 export const getProductById = async (req, res, next) => {
   try {
-    if (req.user?.isDemoUser) {
-      res.status(404);
-      throw new Error('Product not found (DEMO)');
-    }
-
     const product = await Product.findById(req.params.id).populate('farmerId', 'name location');
     if (!product) {
       res.status(404);
@@ -71,16 +49,13 @@ export const getProductById = async (req, res, next) => {
     }
     sendResponse(res, 200, true, 'Product fetched successfully', product);
   } catch (error) {
+    console.error('DEBUG: Error in getProductById:', error.message);
     next(error);
   }
 };
 
 export const deleteProduct = async (req, res, next) => {
   try {
-    if (req.user?.isDemoUser) {
-      return sendResponse(res, 200, true, 'Product deleted successfully (DEMO)');
-    }
-
     const product = await Product.findById(req.params.id);
     
     if (!product) {
@@ -96,6 +71,7 @@ export const deleteProduct = async (req, res, next) => {
     await product.deleteOne();
     sendResponse(res, 200, true, 'Product deleted successfully');
   } catch (error) {
+    console.error('DEBUG: Error in deleteProduct:', error.message);
     next(error);
   }
 };

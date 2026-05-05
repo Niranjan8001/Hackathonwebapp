@@ -1,5 +1,4 @@
 import admin from 'firebase-admin';
-import { setMockMode } from './mockConfig.js';
 
 export const initFirebase = () => {
   try {
@@ -17,7 +16,6 @@ export const initFirebase = () => {
     console.log('Firebase Admin Initialized');
   } catch (error) {
     console.error('Firebase initialization error:', error.message);
-    setMockMode(true);
   }
 };
 
