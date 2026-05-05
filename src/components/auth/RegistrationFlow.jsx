@@ -77,7 +77,7 @@ export const RegistrationFlow = () => {
     setLoading(true);
     const success = await register(formData);
     if (success) {
-      navigate('/dashboard');
+      navigate('/complete-profile');
     } else {
       setLoading(false);
     }
