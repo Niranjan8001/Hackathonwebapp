@@ -222,6 +222,13 @@ register: async (data) => {
     method: 'POST',
     body: JSON.stringify(data)
   });
+},
+
+firebaseLogin: async (token) => {
+  return fetchWithRetry('/auth/firebase-login', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  });
 }
 };
 

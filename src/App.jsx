@@ -91,6 +91,7 @@ const AppRoutes = () => {
 function App() {
   return (
     <FarmerProvider>
+      <div id="recaptcha-container"></div>
       <AppRoutes />
     </FarmerProvider>
   );

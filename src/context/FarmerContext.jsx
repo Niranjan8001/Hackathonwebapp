@@ -18,7 +18,6 @@ export const FarmerProvider = ({ children }) => {
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isDark, setIsDark] = useState(true);
   
-  // Real Data States
   const [realProducts, setRealProducts] = useState([]);
   const [realOrders, setRealOrders] = useState([]);
   const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0 });
@@ -29,46 +28,28 @@ export const FarmerProvider = ({ children }) => {
 
   const toggleTheme = () => setIsDark(!isDark);
 
-  // Centralized Data Access Abstraction
   const getData = useCallback((type) => {
-    const isDemo = currentUser?.isDemoUser;
+    // We no longer have isDemoUser logic, but we keep the structure for compatibility
     switch(type) {
-      case 'products':
-        return isDemo ? DEMO_PRODUCTS : realProducts;
-      case 'orders':
-        return isDemo ? DEMO_ORDERS : realOrders;
-      case 'earnings':
-        return isDemo ? DEMO_EARNINGS : realEarnings;
-      default:
-        return null;
+      case 'products': return realProducts;
+      case 'orders': return realOrders;
+      case 'earnings': return realEarnings;
+      default: return null;
     }
-  }, [currentUser, realProducts, realOrders, realEarnings]);
+  }, [realProducts, realOrders, realEarnings]);
 
-  const fetchUserData = async (firebaseUser) => {
+  const fetchUserData = async (token) => {
     try {
-      const token = await firebaseUser.getIdToken();
       const profileRes = await apiService.getMe(token);
-      let isDemo = false;
-      let isProfileCompleteCheck = false;
-
+      
       if (profileRes.success && profileRes.data) {
-        isDemo = !!profileRes.data.isDemoUser;
-        // Logic for profile completion (example: phone and farm details required)
-        isProfileCompleteCheck = !!profileRes.data.phone; 
-      }
-      
-      setCurrentUser({
-        ...firebaseUser,
-        ...profileRes.data,
-        isDemoUser: isDemo
-      });
-      setIsProfileComplete(isProfileCompleteCheck);
-      setIsAuthenticated(true);
-      
-      // Fetch Real Data 
-      if (!isDemo) {
+        setCurrentUser(profileRes.data);
+        setIsProfileComplete(!!profileRes.data.farmName); // Example completion check
+        setIsAuthenticated(true);
+        
+        // Fetch Real Data 
         const [productsRes, ordersRes, earningsRes] = await Promise.all([
-          apiService.getProductsByFarmer(firebaseUser.uid).catch(() => ({ success: true, data: [] })),
+          apiService.getProductsByFarmer(profileRes.data._id).catch(() => ({ success: true, data: [] })),
           apiService.getOrders(token).catch(() => ({ success: true, data: [] })),
           apiService.getEarnings(token).catch(() => ({ success: true, data: { total: 0, weekly: 0 } }))
         ]);
@@ -77,182 +58,158 @@ export const FarmerProvider = ({ children }) => {
         if (ordersRes.success) setRealOrders(ordersRes.data || []);
         if (earningsRes.success) setRealEarnings(earningsRes.data || { total: 0, weekly: 0 });
       }
-
     } catch (error) {
-      console.error('Error fetching user profile data:', error);
-      // Fallback
-      setCurrentUser({ ...firebaseUser, isDemoUser: false });
-      setIsAuthenticated(true);
-      setIsProfileComplete(false);
+      console.error('Error fetching user profile:', error);
+      setIsAuthenticated(false);
     } finally {
       setIsAppReady(true);
     }
   };
 
-  // Handle Redirect Result on Mount
+  // Check for existing token on mount
   useEffect(() => {
-    const handleRedirect = async () => {
-      try {
-        setLoading(true);
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          isMockSessionRef.current = false;
-          await fetchUserData(result.user);
-        } else {
-          // If no redirect result, wait for onAuthStateChanged
-        }
-      } catch (err) {
-        console.error('Redirect login error:', err);
-        setError({ message: 'Google login failed. Please try again.', type: 'auth' });
+    const initAuth = async () => {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
+        await fetchUserData(savedToken);
+      } else {
         setIsAppReady(true);
-      } finally {
-        setLoading(false);
       }
     };
-
-    handleRedirect();
+    initAuth();
   }, []);
 
-  // Listen for Auth changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        isMockSessionRef.current = false;
-        await fetchUserData(user);
-      } else {
-        if (isMockSessionRef.current) return; // Prevent wiping mock session
-        
-        // Full State Reset
-        setIsAuthenticated(false);
-        setCurrentUser(null);
-        setRealProducts([]);
-        setRealOrders([]);
-        setRealEarnings({ total: 0, weekly: 0 });
-        setIsAppReady(true);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
-  const fetchProducts = async () => {
-    if (currentUser?.isDemoUser) return; // Handled by abstraction
-    
-    if (loading && !isRetrying) return; 
+  const setupRecaptcha = (containerId = 'recaptcha-container') => {
+    if (window.recaptchaVerifier) return window.recaptchaVerifier;
 
     try {
-      setLoading(true);
-      setError(null);
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const result = await apiService.getProductsByFarmer(user.uid);
-      if (result.success) {
-        setRealProducts(result.data || []);
-      } else {
-        throw new Error(result.message || 'Failed to fetch products');
-      }
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError({ 
-        message: err.status === 0 ? 'Network error. Backend might be offline.' : err.message || 'Failed to load products.',
-        type: 'fetch',
-        status: err.status
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: () => console.log('reCAPTCHA verified'),
+        'expired-callback': () => {
+          console.warn('reCAPTCHA expired');
+          window.recaptchaVerifier = null;
+        }
       });
-    } finally {
-      setLoading(false);
-      setIsRetrying(false);
+      return window.recaptchaVerifier;
+    } catch (err) {
+      console.error('reCAPTCHA initialization error:', err);
+      return null;
     }
   };
 
-  const handleRetry = () => {
-    setIsRetrying(true);
-    fetchProducts();
-  };
-
-  const login = async (type = 'google', data = {}) => {
+  const sendOTP = async (phoneNumber) => {
     try {
       setLoading(true);
       setError(null);
       
-      // MOCK_MODE removal: If someone needs to test locally without backend,
-      // they should just use a specific test email.
-      if (type === 'demo') {
-        // A dedicated demo login backdoor for showcase purposes if requested
-        isMockSessionRef.current = true;
-        setIsAuthenticated(true);
-        setCurrentUser({
-          displayName: 'Demo Farmer',
-          email: 'demo@farmdirect.com',
-          isDemoUser: true,
-          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-          certifications: [
-            { id: 1, title: 'Jaivik Bharat', issuer: 'Certified Organic by FSSAI' },
-            { id: 2, title: 'India Organic', issuer: 'NPOP Certification' }
-          ]
-        });
-        setIsProfileComplete(true);
-        setIsAppReady(true);
-        return true;
-      }
+      const appVerifier = setupRecaptcha();
+      if (!appVerifier) throw new Error('Failed to initialize reCAPTCHA');
 
-      if (type === 'google') {
-        await signInWithRedirect(auth, googleProvider);
-        return true;
-      }
-
-      if (type === 'phone' && data.phone && data.otp?.length === 4) {
-        // Simple bypass for testing real phone login flow
-        isMockSessionRef.current = true;
-        setIsAuthenticated(true);
-        setCurrentUser({ name: 'Farmer', phone: data.phone, isDemoUser: true });
-        setIsProfileComplete(true);
-        setIsAppReady(true);
-        return true;
-      }
-      return false;
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+      
+      console.log('DEBUG: Sending OTP to', formattedPhone);
+      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(result);
+      console.log('OTP sent successfully');
+      return true;
     } catch (err) {
-      console.error('Login error:', err);
-      setError({ message: 'Authentication failed. Please try again.', type: 'auth' });
+      console.error('OTP send error:', err);
+      setError({ message: err.message || 'Failed to send OTP', type: 'auth' });
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-const register = async (farmerData) => {
-  try {
-    setLoading(true);
-    setError(null);
+  const verifyOTP = async (otpCode) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!confirmationResult) throw new Error('No active OTP session');
+      
+      console.log('DEBUG: Verifying OTP...');
+      const result = await confirmationResult.confirm(otpCode);
+      console.log('OTP verified successfully');
+      
+      const firebaseToken = await result.user.getIdToken();
+      console.log('DEBUG: Firebase token received');
 
-    // 🔥 REAL BACKEND CALL
-    const res = await apiService.register(farmerData);
+      // Sync with Backend
+      const backendRes = await apiService.firebaseLogin(firebaseToken);
+      console.log('DEBUG: Backend response received', backendRes);
 
-    console.log("REGISTER RESPONSE:", res);
+      if (backendRes.success) {
+        localStorage.setItem('token', backendRes.data.token);
+        await fetchUserData(backendRes.data.token);
+        return true;
+      } else {
+        throw new Error(backendRes.message || 'Backend authentication failed');
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
+      setError({ message: err.message || 'Verification failed', type: 'auth' });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Save token
-    localStorage.setItem("token", res.data.token);
+  const login = async (type = 'google', data = {}) => {
+    // We only support real auth now
+    return false; 
+  };
 
-    // Update app state
-    isMockSessionRef.current = false;
-    setIsAuthenticated(true);
-    setCurrentUser(res.data);
+  const register = async (farmerData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiService.register(farmerData);
+      if (res.success) {
+        localStorage.setItem("token", res.data.token);
+        await fetchUserData(res.data.token);
+        return true;
+      }
+      throw new Error(res.message || 'Registration failed');
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError({ message: err.message || 'Registration failed', type: 'auth' });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return true;
+  const logout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setRealProducts([]);
+    setRealOrders([]);
+    setRealEarnings({ total: 0, weekly: 0 });
+    signOut(auth).catch(console.error);
+  };
 
-  } catch (err) {
-    console.error("Registration error:", err);
-
-    setError({
-      message: err.message || 'Registration failed',
-      type: 'auth'
-    });
-
-    return false;
-
-  } finally {
-    setLoading(false);
-  }
-};
+  const addProduct = async (productData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+      const result = await apiService.addProduct(productData, token);
+      if (result.success) {
+        // Refresh products
+        const productsRes = await apiService.getProductsByFarmer(currentUser._id);
+        if (productsRes.success) setRealProducts(productsRes.data || []);
+        return result.data;
+      }
+      throw new Error(result.message);
+    } catch (err) {
+      console.error('Add product error:', err);
+      throw err;
+    }
+  };
 
   const updateProfileImages = (banner, profile) => {
     setCurrentUser(prev => ({
@@ -277,60 +234,9 @@ const register = async (farmerData) => {
     }));
   };
 
-  const logout = () => {
-    isMockSessionRef.current = false;
-    // Full state reset
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setRealProducts([]);
-    setRealOrders([]);
-    setRealEarnings({ total: 0, weekly: 0 });
-    
-    signOut(auth).catch(console.error);
-  };
-
-  const addProduct = async (productData) => {
-    try {
-      if (currentUser?.isDemoUser) {
-        // Pretend to add product for demo users
-        return { ...productData, id: `demo_new_${Date.now()}` };
-      }
-
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not authenticated');
-
-      const token = await user.getIdToken();
-      const result = await apiService.addProduct(productData, token);
-
-      if (result.success) {
-        await fetchProducts(); 
-        return result.data;
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (err) {
-      console.error('Add product error:', err);
-      throw err;
-    }
-  };
-
-  const updateProductQuantity = (id, newQuantity) => {
-    if (currentUser?.isDemoUser) return; // Prevent editing demo products directly
-    setRealProducts(realProducts.map(p => p.id === id ? { ...p, quantity: newQuantity, stock: newQuantity } : p));
-  };
-
-  const updateOrderStatus = (id, status) => {
-    if (currentUser?.isDemoUser) return;
-    setRealOrders(realOrders.map(o => o.id === id ? { ...o, status } : o));
-  };
-
-  // Expose the abstracted data directly so components don't have to change
   const products = getData('products');
   const orders = getData('orders');
   const earnings = getData('earnings');
-
-  const totalEarnings = earnings?.total || 0;
-  const weeklyEarnings = earnings?.weekly || 0;
 
   return (
     <FarmerContext.Provider value={{
@@ -344,25 +250,22 @@ const register = async (farmerData) => {
       isDark,
       toggleTheme,
       login,
+      sendOTP,
+      verifyOTP,
       register,
-      updateProfileImages,
-      updateBio,
-      addCertification,
       logout,
       products,
       loading,
       error,
-      fetchProducts,
-      handleRetry,
       addProduct,
-      updateProductQuantity,
       orders,
-      updateOrderStatus,
-      totalEarnings,
-      weeklyEarnings
+      totalEarnings: earnings?.total || 0,
+      weeklyEarnings: earnings?.weekly || 0,
+      updateProfileImages,
+      updateBio,
+      addCertification
     }}>
       {children}
     </FarmerContext.Provider>
   );
 };
-

@@ -7,20 +7,16 @@ import { useNavigate } from 'react-router-dom';
 export const LoginFlow = () => {
   const [step, setStep] = useState(1); // 1: Phone, 2: OTP
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   
-  const { login } = useFarmerContext();
+  const { login, sendOTP, verifyOTP, loading, error } = useFarmerContext();
   const navigate = useNavigate();
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (phone.length === 10) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        setStep(2);
-      }, 1200);
+      const success = await sendOTP(phone);
+      if (success) setStep(2);
     }
   };
 
@@ -31,19 +27,16 @@ export const LoginFlow = () => {
     setOtp(newOtp);
     
     // Auto focus next
-    if (value && index < 3) {
+    if (value && index < 5) {
       const nextInput = document.getElementById(`otp-${index + 1}`);
       if (nextInput) nextInput.focus();
     }
   };
 
   const handleVerify = async () => {
-    setLoading(true);
-    const success = await login('phone', { phone, otp: otp.join('') });
+    const success = await verifyOTP(otp.join(''));
     if (success) {
       navigate('/dashboard');
-    } else {
-      setLoading(false);
     }
   };
 
@@ -118,10 +111,16 @@ export const LoginFlow = () => {
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
-                  className="w-10 h-12 lg:w-14 lg:h-16 text-center text-xl lg:text-2xl font-bold bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white focus:outline-none focus:border-green-500/50 transition-all"
+                  className="w-8 h-10 lg:w-12 lg:h-14 text-center text-lg lg:text-xl font-bold bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white focus:outline-none focus:border-green-500/50 transition-all"
                 />
               ))}
             </div>
+
+            {error && (
+              <div className="text-red-400 text-[10px] font-bold text-center animate-pulse">
+                {error.message}
+              </div>
+            )}
 
             <motion.button
               whileHover={otp.every(d => d !== '') ? { y: -2, boxShadow: "0 0 30px rgba(34,197,94,0.6)" } : {}}
@@ -142,6 +141,13 @@ export const LoginFlow = () => {
               className="w-full text-white/30 text-[9px] lg:text-[10px] uppercase font-bold tracking-widest hover:text-white transition-colors"
             >
               Back to entry
+            </button>
+            <button 
+              onClick={() => sendOTP(phone)}
+              disabled={loading}
+              className="w-full text-white/10 text-[8px] uppercase font-bold tracking-widest hover:text-green-400/40 transition-colors mt-2 disabled:opacity-50"
+            >
+              Resend Code
             </button>
           </motion.div>
         )}

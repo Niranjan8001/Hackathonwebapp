@@ -16,9 +16,11 @@ import { useNavigate } from 'react-router-dom';
 
 export const RegistrationFlow = () => {
   const navigate = useNavigate();
-  const { register } = useFarmerContext();
+  const { register, sendOTP, verifyOTP, loading: contextLoading, error } = useFarmerContext();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  const loading = contextLoading || localLoading;
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -46,7 +48,7 @@ export const RegistrationFlow = () => {
         return formData.name.trim() !== '' && 
                formData.phone.length === 10;
       case 2:
-        return formData.otp.length === 4;
+        return formData.otp.length === 6; // Firebase OTP is usually 6 digits
       case 3: 
         return formData.farmName.trim() !== '' && 
                formData.location.trim() !== '' && 
@@ -60,8 +62,16 @@ export const RegistrationFlow = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isStepValid()) {
+      if (step === 1) {
+        const success = await sendOTP(formData.phone);
+        if (!success) return;
+      }
+      if (step === 2) {
+        const success = await verifyOTP(formData.otp);
+        if (!success) return;
+      }
       setStep(s => Math.min(s + 1, 5));
     }
   };
@@ -197,14 +207,14 @@ export const RegistrationFlow = () => {
                 <div className="space-y-1">
                   <h3 className="text-white font-bold text-xl">Verification</h3>
                   <p className="text-white/40 text-[10px] font-medium leading-relaxed">
-                    Enter the 4-digit code sent to <span className="text-green-400">+91 {formData.phone}</span>
+                    Enter the 6-digit code sent to <span className="text-green-400">+91 {formData.phone}</span>
                   </p>
                 </div>
               </div>
               
-              <div className="flex justify-center gap-4 py-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="w-14 h-16 bg-white/[0.08] border border-white/10 rounded-2xl flex items-center justify-center">
+              <div className="flex justify-center gap-2 py-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-10 lg:w-12 h-14 lg:h-16 bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl flex items-center justify-center">
                     <input
                       type="text"
                       maxLength={1}
@@ -214,7 +224,7 @@ export const RegistrationFlow = () => {
                         if (val) {
                           const newOtp = formData.otp.split('');
                           newOtp[i] = val;
-                          handleChange('otp', newOtp.join('').slice(0, 4));
+                          handleChange('otp', newOtp.join('').slice(0, 6));
                         }
                       }}
                       onKeyDown={(e) => {
@@ -222,15 +232,25 @@ export const RegistrationFlow = () => {
                           handleChange('otp', formData.otp.slice(0, -1));
                         }
                       }}
-                      className="w-full h-full bg-transparent text-center text-2xl font-black text-green-400 focus:outline-none"
+                      className="w-full h-full bg-transparent text-center text-xl lg:text-2xl font-black text-green-400 focus:outline-none"
                     />
                   </div>
                 ))}
               </div>
 
+              {error && (
+                <div className="text-red-400 text-[10px] font-bold text-center animate-pulse">
+                  {error.message}
+                </div>
+              )}
+
               <div className="text-center">
-                <button className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-green-400 transition-colors">
-                  Resend OTP in 0:29
+                <button 
+                  onClick={() => sendOTP(formData.phone)}
+                  disabled={loading}
+                  className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-green-400 transition-colors disabled:opacity-50"
+                >
+                  Resend OTP
                 </button>
               </div>
             </motion.div>
