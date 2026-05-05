@@ -19,38 +19,51 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ordersData = [
-  { id: '#ORD12345', customer: 'Rohit Sharma', location: 'Lucknow, UP', product: 'Organic Wheat', quantity: '50 kg', amount: '₹1,400', status: 'Pending', date: 'May 29, 2025', time: '10:30 AM', items: 1, customerImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop' },
-  { id: '#ORD12344', customer: 'Priya Verma', location: 'Kanpur, UP', product: 'Fresh Tomatoes', quantity: '20 kg', amount: '₹500', status: 'Processing', date: 'May 29, 2025', time: '09:15 AM', items: 2, customerImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=100&h=100&fit=crop' },
-  { id: '#ORD12343', customer: 'Amit Singh', location: 'Varanasi, UP', product: 'Basmati Rice', quantity: '10 kg', amount: '₹850', status: 'Shipped', date: 'May 28, 2025', time: '06:45 PM', items: 1, customerImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=100&h=100&fit=crop' },
-  { id: '#ORD12342', customer: 'Neha Gupta', location: 'Allahabad, UP', product: 'Potatoes', quantity: '30 kg', amount: '₹600', status: 'Delivered', date: 'May 27, 2025', time: '02:20 PM', items: 1, customerImg: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=100&h=100&fit=crop' },
-  { id: '#ORD12341', customer: 'Vikash Yadav', location: 'Gorakhpur, UP', product: 'Mustard Oil', quantity: '5 L', amount: '₹900', status: 'Cancelled', date: 'May 27, 2025', time: '11:05 AM', items: 1, customerImg: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=100&h=100&fit=crop' },
-  { id: '#ORD12340', customer: 'Sunita Meena', location: 'Jaipur, RJ', product: 'Whole Wheat', quantity: '5 kg', amount: '₹120', status: 'Delivered', date: 'May 26, 2025', time: '11:20 AM', items: 1, customerImg: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop', productImg: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop' },
-];
+import { useFarmerContext } from '../context/FarmerContext';
 
 export const OrdersView = () => {
+  const { orders = [] } = useFarmerContext();
   const [activeTab, setActiveTab] = useState('All Orders');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);
 
+  // Map backend orders to UI format gracefully
+  const formattedOrders = useMemo(() => {
+    return orders.map(o => ({
+      id: `#ORD${o.id || Math.floor(Math.random()*10000)}`,
+      rawId: o.id,
+      customer: o.customerName || 'Unknown',
+      location: o.buyerId?.location || 'India',
+      product: o.productName || o.products?.[0]?.productId?.title || 'Unknown Product',
+      quantity: `${o.quantity || o.products?.[0]?.quantity || 1}`,
+      amount: `₹${o.total || o.totalAmount || 0}`,
+      status: o.status === 'pending' ? 'Pending' : (o.status || 'Pending'),
+      date: new Date(o.date || o.createdAt || Date.now()).toLocaleDateString(),
+      time: new Date(o.date || o.createdAt || Date.now()).toLocaleTimeString(),
+      items: o.products?.length || 1,
+      customerImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      productImg: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop'
+    }));
+  }, [orders]);
+
   const stats = [
-    { label: 'Total Orders', value: 128, subtext: 'All time orders', icon: ClipboardList, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
-    { label: 'Pending', value: 18, subtext: 'Awaiting action', icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
-    { label: 'Processing', value: 32, subtext: 'In progress', icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
-    { label: 'Delivered', value: 68, subtext: 'Completed', icon: CheckCircle2, color: 'text-green-400', bgColor: 'bg-green-500/10' },
-    { label: 'Cancelled', value: 10, subtext: 'Cancelled orders', icon: XCircle, color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
+    { label: 'Total Orders', value: formattedOrders.length, subtext: 'All time orders', icon: ClipboardList, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
+    { label: 'Pending', value: formattedOrders.filter(o => o.status === 'Pending').length, subtext: 'Awaiting action', icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
+    { label: 'Processing', value: formattedOrders.filter(o => o.status === 'Processing').length, subtext: 'In progress', icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+    { label: 'Delivered', value: formattedOrders.filter(o => o.status === 'Delivered').length, subtext: 'Completed', icon: CheckCircle2, color: 'text-green-400', bgColor: 'bg-green-500/10' },
+    { label: 'Cancelled', value: formattedOrders.filter(o => o.status === 'Cancelled').length, subtext: 'Cancelled orders', icon: XCircle, color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
   ];
 
   const tabs = ['All Orders', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
   const filteredOrders = useMemo(() => {
-    return ordersData.filter(order => {
+    return formattedOrders.filter(order => {
       const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            order.customer.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab = activeTab === 'All Orders' || order.status === activeTab;
       return matchesSearch && matchesTab;
     });
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, formattedOrders]);
 
   return (
     <GlassLayout>
@@ -192,9 +205,15 @@ export const OrdersView = () => {
               </thead>
               <tbody className="divide-y divide-white/5">
                 <AnimatePresence mode="popLayout">
-                  {filteredOrders.map((order) => (
+                  {filteredOrders.length > 0 ? filteredOrders.map((order) => (
                     <OrderRow key={order.id} order={order} />
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan="7" className="text-center py-12 text-white/30 text-xs font-bold uppercase tracking-widest">
+                        No orders found
+                      </td>
+                    </tr>
+                  )}
                 </AnimatePresence>
               </tbody>
             </table>
@@ -203,7 +222,7 @@ export const OrdersView = () => {
           {/* Pagination Footer */}
           <div className="px-8 py-6 border-t border-white/5 flex justify-between items-center bg-white/[0.01]">
             <p className="text-xs font-medium text-white/20">
-              Showing 1 to {filteredOrders.length} of 128 orders
+              Showing {filteredOrders.length > 0 ? 1 : 0} to {filteredOrders.length} of {formattedOrders.length} orders
             </p>
             <div className="flex items-center gap-2">
               <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all"><ChevronLeft className="w-4 h-4" /></button>
@@ -248,7 +267,7 @@ const OrderRow = ({ order }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={() => navigate(`/orders/${order.id.replace('#', '')}`)}
+      onClick={() => navigate(`/orders/${order.rawId || order.id.replace('#', '')}`)}
       className="group hover:bg-white/[0.02] transition-all duration-300 cursor-pointer"
     >
       <td className="px-8 py-5">

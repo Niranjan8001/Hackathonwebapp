@@ -14,7 +14,15 @@ import {
   CloudRain
 } from 'lucide-react';
 
+import { useFarmerContext } from '../context/FarmerContext';
+
 export const DashboardView = () => {
+  const { products = [], orders = [], totalEarnings = 0 } = useFarmerContext();
+  
+  // Calculate some derived stats
+  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+  const activeProducts = products.filter(p => p.status === 'Active' || p.stock > 0).length;
+
   return (
     <GlassLayout>
       <div className="h-full flex flex-col gap-3 lg:gap-6 overflow-y-auto lg:overflow-hidden custom-scrollbar pb-20 lg:pb-0">
@@ -24,23 +32,23 @@ export const DashboardView = () => {
           <StatCard 
             icon={<Wallet />} 
             label="Earnings" 
-            value="₹48,650" 
-            trend="+12.5%" 
-            trendUp={true} 
+            value={`₹${totalEarnings}`} 
+            trend={totalEarnings > 0 ? "+12.5%" : "0%"} 
+            trendUp={totalEarnings > 0} 
           />
           <StatCard 
             icon={<Clock />} 
             label="Orders" 
-            value="8" 
-            trend="2 pending" 
-            trendUp={false} 
+            value={orders.length.toString()} 
+            trend={orders.length > 0 ? `${pendingOrders} pending` : "No orders"} 
+            trendUp={orders.length > 0 && pendingOrders === 0} 
           />
           <StatCard 
             icon={<Sprout />} 
             label="Crops" 
-            value="5" 
-            trend="2 ready" 
-            trendUp={true} 
+            value={products.length.toString()} 
+            trend={products.length > 0 ? `${activeProducts} active` : "No crops"} 
+            trendUp={products.length > 0} 
           />
           <StatCard 
             icon={<Map />} 
@@ -65,13 +73,17 @@ export const DashboardView = () => {
             
             <div className="relative flex-1 flex items-end justify-between px-1 pb-6 group min-h-[60px]">
               <div className="absolute inset-x-0 bottom-6 h-[1px] bg-white/5" />
-              {[30, 45, 35, 60, 50, 80, 70].map((h, i) => (
+              {totalEarnings > 0 ? [30, 45, 35, 60, 50, 80, 70].map((h, i) => (
                 <div key={i} className="relative w-5 lg:w-8 bg-green-500/20 rounded-t-md lg:rounded-t-lg transition-all hover:bg-green-500/40 cursor-pointer" style={{ height: `${h}%` }}>
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-green-500 text-[8px] font-bold px-1.5 py-0.5 rounded">
                     ₹{h * 600}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="w-full flex items-center justify-center pb-4 text-white/30 text-xs font-bold uppercase tracking-widest">
+                  No Earnings Data
+                </div>
+              )}
             </div>
             <div className="flex justify-between px-1 text-[8px] font-black uppercase tracking-widest text-white/10 shrink-0">
               <span>May 1</span>
@@ -94,9 +106,14 @@ export const DashboardView = () => {
               <button className="text-[8px] font-black uppercase tracking-widest text-green-400">All</button>
             </div>
             <div className="space-y-1.5 lg:space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
-              <PriceRow name="Wheat" price="₹2,125" unit="/q" trend="+3.2%" up={true} />
-              <PriceRow name="Rice" price="₹2,850" unit="/q" trend="-1.1%" up={false} />
-              <PriceRow name="Tomato" price="₹1,620" unit="/q" trend="+5.4%" up={true} />
+              {products.length > 0 ? products.slice(0, 3).map((p, i) => (
+                <PriceRow key={p.id || i} name={p.name} price={p.price} unit={p.unit} trend="+0%" up={true} />
+              )) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 py-4">
+                  <Sprout className="w-6 h-6 mb-2" />
+                  <p className="text-[10px] font-bold">No Products Found</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -137,9 +154,15 @@ export const DashboardView = () => {
                   </tr>
                 </thead>
                 <tbody className="space-y-1">
-                  <OrderRow id="#FD1234" crop="Wheat" qty="50q" status="Confirmed" date="May 28" />
-                  <OrderRow id="#FD1235" crop="Rice" qty="30q" status="Processing" date="May 30" />
-                  <OrderRow id="#FD1236" crop="Tomato" qty="20q" status="Shipped" date="Jun 02" />
+                  {orders.length > 0 ? orders.slice(0, 3).map((o, i) => (
+                    <OrderRow key={o.id || i} id={`#${o.id}`} crop={o.productName} qty={o.quantity} status={o.status} date={new Date(o.date).toLocaleDateString()} />
+                  )) : (
+                    <tr>
+                      <td colSpan="5" className="text-center py-8 text-white/30 text-xs font-bold uppercase tracking-widest">
+                        No Recent Orders
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -1,48 +1,110 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { auth, googleProvider, signInWithRedirect, getRedirectResult, signInWithPhoneNumber, RecaptchaVerifier } from '../lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 import { apiService } from '../services/apiService';
+import { DEMO_PRODUCTS, DEMO_ORDERS, DEMO_EARNINGS } from '../mock/demoData';
 
 const FarmerContext = createContext();
 
 export const useFarmerContext = () => useContext(FarmerContext);
 
 export const FarmerProvider = ({ children }) => {
+  const isMockSessionRef = useRef(false);
+  const [isAppReady, setIsAppReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState('English');
   const [currentUser, setCurrentUser] = useState(null);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isDark, setIsDark] = useState(true);
-  const [products, setProducts] = useState([]);
+  
+  // Real Data States
+  const [realProducts, setRealProducts] = useState([]);
+  const [realOrders, setRealOrders] = useState([]);
+  const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0 });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
   const toggleTheme = () => setIsDark(!isDark);
-  
-  // Mock Orders
-  const [orders, setOrders] = useState([
-    { id: 101, productId: 1, productName: 'Tomatoes', quantity: 5, customerName: 'Ramesh Singh', status: 'Pending', total: 200, date: new Date().toISOString() },
-    { id: 102, productId: 2, productName: 'Potatoes', quantity: 10, customerName: 'Suresh Kumar', status: 'Accepted', total: 300, date: new Date(Date.now() - 86400000).toISOString() },
-    { id: 103, productId: 3, productName: 'Apples', quantity: 2, customerName: 'Priya Verma', status: 'Delivered', total: 240, date: new Date(Date.now() - 172800000).toISOString() },
-  ]);
+
+  // Centralized Data Access Abstraction
+  const getData = useCallback((type) => {
+    const isDemo = currentUser?.isDemoUser;
+    switch(type) {
+      case 'products':
+        return isDemo ? DEMO_PRODUCTS : realProducts;
+      case 'orders':
+        return isDemo ? DEMO_ORDERS : realOrders;
+      case 'earnings':
+        return isDemo ? DEMO_EARNINGS : realEarnings;
+      default:
+        return null;
+    }
+  }, [currentUser, realProducts, realOrders, realEarnings]);
+
+  const fetchUserData = async (firebaseUser) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      const profileRes = await apiService.getMe(token);
+      let isDemo = false;
+      let isProfileCompleteCheck = false;
+
+      if (profileRes.success && profileRes.data) {
+        isDemo = !!profileRes.data.isDemoUser;
+        // Logic for profile completion (example: phone and farm details required)
+        isProfileCompleteCheck = !!profileRes.data.phone; 
+      }
+      
+      setCurrentUser({
+        ...firebaseUser,
+        ...profileRes.data,
+        isDemoUser: isDemo
+      });
+      setIsProfileComplete(isProfileCompleteCheck);
+      setIsAuthenticated(true);
+      
+      // Fetch Real Data 
+      if (!isDemo) {
+        const [productsRes, ordersRes, earningsRes] = await Promise.all([
+          apiService.getProductsByFarmer(firebaseUser.uid).catch(() => ({ success: true, data: [] })),
+          apiService.getOrders(token).catch(() => ({ success: true, data: [] })),
+          apiService.getEarnings(token).catch(() => ({ success: true, data: { total: 0, weekly: 0 } }))
+        ]);
+
+        if (productsRes.success) setRealProducts(productsRes.data || []);
+        if (ordersRes.success) setRealOrders(ordersRes.data || []);
+        if (earningsRes.success) setRealEarnings(earningsRes.data || { total: 0, weekly: 0 });
+      }
+
+    } catch (error) {
+      console.error('Error fetching user profile data:', error);
+      // Fallback
+      setCurrentUser({ ...firebaseUser, isDemoUser: false });
+      setIsAuthenticated(true);
+      setIsProfileComplete(false);
+    } finally {
+      setIsAppReady(true);
+    }
+  };
 
   // Handle Redirect Result on Mount
   useEffect(() => {
     const handleRedirect = async () => {
       try {
         setLoading(true);
-        console.log('Checking for redirect result...');
         const result = await getRedirectResult(auth);
         if (result?.user) {
-          console.log('Redirect login successful:', result.user.email);
-          setIsAuthenticated(true);
-          setCurrentUser(result.user);
+          isMockSessionRef.current = false;
+          await fetchUserData(result.user);
+        } else {
+          // If no redirect result, wait for onAuthStateChanged
         }
       } catch (err) {
         console.error('Redirect login error:', err);
         setError({ message: 'Google login failed. Please try again.', type: 'auth' });
+        setIsAppReady(true);
       } finally {
         setLoading(false);
       }
@@ -53,154 +115,49 @@ export const FarmerProvider = ({ children }) => {
 
   // Listen for Auth changes
   useEffect(() => {
-    if (MOCK_MODE) {
-      console.log('[FarmerContext] MOCK_MODE active: Waiting for manual login');
-      // We don't auto-login anymore to allow the login flow to be shown
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log('Auth state changed: User is logged in', user.email);
-        setIsAuthenticated(true);
-        setCurrentUser(user);
-        fetchProducts();
+        isMockSessionRef.current = false;
+        await fetchUserData(user);
       } else {
-        console.log('Auth state changed: No user');
+        if (isMockSessionRef.current) return; // Prevent wiping mock session
+        
+        // Full State Reset
         setIsAuthenticated(false);
         setCurrentUser(null);
-        setProducts([]);
+        setRealProducts([]);
+        setRealOrders([]);
+        setRealEarnings({ total: 0, weekly: 0 });
+        setIsAppReady(true);
       }
     });
     return () => unsubscribe();
   }, []);
 
-  const MOCK_MODE = true;
-
-  const MOCK_PRODUCTS = [
-    {
-      id: 'mock-1',
-      name: 'Organic Tomatoes',
-      category: 'Vegetables',
-      price: '₹40',
-      stock: '50 kg',
-      quantity: 50,
-      image: 'https://images.unsplash.com/photo-1595858602621-eebcbcd83e1c?w=400&h=400&fit=crop',
-      status: 'Active',
-      sold: '12 kg',
-      unit: '/ kg',
-      weight: '1 kg'
-    },
-    {
-      id: 'mock-2',
-      name: 'Farm Fresh Potatoes',
-      category: 'Vegetables',
-      price: '₹30',
-      stock: '100 kg',
-      quantity: 100,
-      image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop',
-      status: 'Active',
-      sold: '45 kg',
-      unit: '/ kg',
-      weight: '1 kg'
-    },
-    {
-      id: 'mock-3',
-      name: 'Green Spinach',
-      category: 'Vegetables',
-      price: '₹20',
-      stock: '15 kg',
-      quantity: 15,
-      image: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=400&fit=crop',
-      status: 'Active',
-      sold: '8 kg',
-      unit: '/ bunch',
-      weight: '500g'
-    },
-    {
-      id: 'mock-4',
-      name: 'Fresh Carrots',
-      category: 'Vegetables',
-      price: '₹60',
-      stock: '5 kg',
-      quantity: 5,
-      image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&h=400&fit=crop',
-      status: 'Low Stock',
-      sold: '20 kg',
-      unit: '/ kg',
-      weight: '1 kg'
-    },
-    {
-      id: 'mock-5',
-      name: 'Organic Honey',
-      category: 'Groceries',
-      price: '₹250',
-      stock: '0 kg',
-      quantity: 0,
-      image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=400&fit=crop',
-      status: 'Out of Stock',
-      sold: '10 kg',
-      unit: '/ bottle',
-      weight: '500g'
-    }
-  ];
-
   const fetchProducts = async () => {
+    if (currentUser?.isDemoUser) return; // Handled by abstraction
+    
     if (loading && !isRetrying) return; 
 
     try {
       setLoading(true);
       setError(null);
-      
-      if (MOCK_MODE) {
-        console.log('[FarmerContext] MOCK_MODE is active. Skipping API call.');
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setProducts(MOCK_PRODUCTS);
-        setLoading(false);
-        return;
-      }
+      const user = auth.currentUser;
+      if (!user) return;
 
-      const result = await apiService.getProducts();
-      
-      if (result.success && result.data) {
-        if (result.data.length === 0) {
-          console.warn('API returned empty product list. Using mock data.');
-          setProducts(MOCK_PRODUCTS);
-        } else {
-          // Map backend fields to frontend fields
-          const mappedProducts = result.data.map(p => ({
-            id: p._id,
-            name: p.title || p.name,
-            category: p.category,
-            price: `₹${p.price}`,
-            stock: `${p.stock} kg`,
-            quantity: p.stock,
-            image: p.images && p.images.length > 0 ? p.images[0] : 'https://images.unsplash.com/photo-1595858602621-eebcbcd83e1c?w=400&h=400&fit=crop',
-            status: p.stock > 10 ? 'Active' : p.stock > 0 ? 'Low Stock' : 'Out of Stock',
-            sold: '0 kg',
-            unit: '/ kg',
-            weight: '1 kg'
-          }));
-          setProducts(mappedProducts);
-        }
+      const result = await apiService.getProductsByFarmer(user.uid);
+      if (result.success) {
+        setRealProducts(result.data || []);
       } else {
         throw new Error(result.message || 'Failed to fetch products');
       }
     } catch (err) {
       console.error('Error fetching products:', err);
       setError({ 
-        message: err.status === 0 
-          ? 'Network error. Backend might be offline.' 
-          : err.message || 'Failed to load products.',
+        message: err.status === 0 ? 'Network error. Backend might be offline.' : err.message || 'Failed to load products.',
         type: 'fetch',
         status: err.status
       });
-      
-      // Fallback to mock data on error if no products exist
-      if (products.length === 0) {
-        setProducts(MOCK_PRODUCTS);
-      }
     } finally {
       setLoading(false);
       setIsRetrying(false);
@@ -217,57 +174,39 @@ export const FarmerProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      if (MOCK_MODE) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (type === 'google') {
-          console.log('[FarmerContext] Mock Google Login successful');
-          setIsAuthenticated(true);
-          setCurrentUser({
-            displayName: 'Ramesh Yadav',
-            email: 'ramesh@demo.com',
-            photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-            certifications: [
-              { id: 1, title: 'Jaivik Bharat', issuer: 'Certified Organic by FSSAI' },
-              { id: 2, title: 'India Organic', issuer: 'NPOP Certification' }
-            ]
-          });
-          fetchProducts();
-          return true;
-        }
-
-        if (type === 'phone') {
-          if (data.otp === '1234') {
-            console.log('[FarmerContext] Mock Phone Login successful');
-            setIsAuthenticated(true);
-            setCurrentUser({ 
-              displayName: 'Ramesh Yadav',
-              phone: data.phone,
-              email: 'ramesh@demo.com',
-              certifications: [
-                { id: 1, title: 'Jaivik Bharat', issuer: 'Certified Organic by FSSAI' },
-                { id: 2, title: 'India Organic', issuer: 'NPOP Certification' }
-              ]
-            });
-            fetchProducts();
-            return true;
-          }
-          return false;
-        }
+      // MOCK_MODE removal: If someone needs to test locally without backend,
+      // they should just use a specific test email.
+      if (type === 'demo') {
+        // A dedicated demo login backdoor for showcase purposes if requested
+        isMockSessionRef.current = true;
+        setIsAuthenticated(true);
+        setCurrentUser({
+          displayName: 'Demo Farmer',
+          email: 'demo@farmdirect.com',
+          isDemoUser: true,
+          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+          certifications: [
+            { id: 1, title: 'Jaivik Bharat', issuer: 'Certified Organic by FSSAI' },
+            { id: 2, title: 'India Organic', issuer: 'NPOP Certification' }
+          ]
+        });
+        setIsProfileComplete(true);
+        setIsAppReady(true);
+        return true;
       }
 
       if (type === 'google') {
-        console.log('Starting Google Redirect login flow...');
         await signInWithRedirect(auth, googleProvider);
         return true;
       }
 
-      // Phone login (Real flow if not mock)
-      // This is currently just a placeholder in the original code for real phone auth
-      if (data.phone && data.otp === '1234') {
+      if (type === 'phone' && data.phone && data.otp?.length === 4) {
+        // Simple bypass for testing real phone login flow
+        isMockSessionRef.current = true;
         setIsAuthenticated(true);
-        setCurrentUser({ name: 'Farmer', phone: data.phone });
+        setCurrentUser({ name: 'Farmer', phone: data.phone, isDemoUser: true });
+        setIsProfileComplete(true);
+        setIsAppReady(true);
         return true;
       }
       return false;
@@ -285,27 +224,20 @@ export const FarmerProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      if (MOCK_MODE) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('[FarmerContext] Mock Registration successful:', farmerData);
-        setIsAuthenticated(true);
-        setCurrentUser({
-          ...farmerData,
-          displayName: farmerData.name || 'New Farmer',
-          email: farmerData.email || 'farmer@demo.com',
-          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-          certifications: [
-            { id: 1, title: 'Jaivik Bharat', issuer: 'Certified Organic by FSSAI' },
-            { id: 2, title: 'India Organic', issuer: 'NPOP Certification' }
-          ]
-        });
-        setIsProfileComplete(false);
-        fetchProducts();
-        return true;
-      }
+      // In a real app, you'd call apiService.register(farmerData)
+      // and it would create the user in MongoDB with isDemoUser: false
       
-      // Real registration logic would go here
+      isMockSessionRef.current = true;
+      setIsAuthenticated(true);
+      setCurrentUser({
+        ...farmerData,
+        displayName: farmerData.name || 'New Farmer',
+        email: farmerData.email || 'farmer@demo.com',
+        isDemoUser: false, 
+        photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      });
+      setIsProfileComplete(false);
+      
       return true;
     } catch (err) {
       console.error('Registration error:', err);
@@ -340,18 +272,24 @@ export const FarmerProvider = ({ children }) => {
   };
 
   const logout = () => {
-    if (MOCK_MODE) {
-      setIsAuthenticated(false);
-      setCurrentUser(null);
-      setProducts([]);
-      return;
-    }
-    signOut(auth);
+    isMockSessionRef.current = false;
+    // Full state reset
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setRealProducts([]);
+    setRealOrders([]);
+    setRealEarnings({ total: 0, weekly: 0 });
+    
+    signOut(auth).catch(console.error);
   };
-
 
   const addProduct = async (productData) => {
     try {
+      if (currentUser?.isDemoUser) {
+        // Pretend to add product for demo users
+        return { ...productData, id: `demo_new_${Date.now()}` };
+      }
+
       const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
 
@@ -359,7 +297,6 @@ export const FarmerProvider = ({ children }) => {
       const result = await apiService.addProduct(productData, token);
 
       if (result.success) {
-        console.log('Product added successfully:', result.data);
         await fetchProducts(); 
         return result.data;
       } else {
@@ -372,22 +309,26 @@ export const FarmerProvider = ({ children }) => {
   };
 
   const updateProductQuantity = (id, newQuantity) => {
-    setProducts(products.map(p => p.id === id ? { ...p, quantity: newQuantity, stock: newQuantity } : p));
+    if (currentUser?.isDemoUser) return; // Prevent editing demo products directly
+    setRealProducts(realProducts.map(p => p.id === id ? { ...p, quantity: newQuantity, stock: newQuantity } : p));
   };
 
   const updateOrderStatus = (id, status) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
+    if (currentUser?.isDemoUser) return;
+    setRealOrders(realOrders.map(o => o.id === id ? { ...o, status } : o));
   };
 
-  // Derived Earnings
-  const totalEarnings = orders
-    .filter(o => o.status === 'Delivered')
-    .reduce((sum, order) => sum + order.total, 0);
+  // Expose the abstracted data directly so components don't have to change
+  const products = getData('products');
+  const orders = getData('orders');
+  const earnings = getData('earnings');
 
-  const weeklyEarnings = totalEarnings; // simplified for mock
+  const totalEarnings = earnings?.total || 0;
+  const weeklyEarnings = earnings?.weekly || 0;
 
   return (
     <FarmerContext.Provider value={{
+      isAppReady,
       isAuthenticated,
       currentUser,
       isProfileComplete,
@@ -418,3 +359,4 @@ export const FarmerProvider = ({ children }) => {
     </FarmerContext.Provider>
   );
 };
+

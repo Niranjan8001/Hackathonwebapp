@@ -1,16 +1,20 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const transactions = [
-  { id: '#ORD1256', date: 'May 22, 2024', description: 'Payment for Order #ORD1256', amount: '₹125', type: 'Product Sale', status: 'Completed' },
-  { id: '#ORD1255', date: 'May 22, 2024', description: 'Payment for Order #ORD1255', amount: '₹60', type: 'Product Sale', status: 'Completed' },
-  { id: '#ORD1254', date: 'May 21, 2024', description: 'Payment for Order #ORD1254', amount: '₹180', type: 'Product Sale', status: 'Completed' },
-  { id: '#ORD1253', date: 'May 21, 2024', description: 'Payment for Order #ORD1253', amount: '₹110', type: 'Product Sale', status: 'Completed' },
-  { id: 'PAYOUT-021', date: 'May 20, 2024', description: 'Payout to Bank Account', amount: '- ₹8,750', type: 'Payout', status: 'Completed', isNegative: true },
-  { id: '#ORD1252', date: 'May 19, 2024', description: 'Payment for Order #ORD1252', amount: '₹120', type: 'Product Sale', status: 'Completed' },
-];
+import { useFarmerContext } from '../../context/FarmerContext';
 
 export const EarningsTable = () => {
+  const { orders = [] } = useFarmerContext();
+
+  const transactions = orders.map((o) => ({
+    id: `#ORD${o.id || Math.floor(Math.random()*10000)}`,
+    date: new Date(o.date || o.createdAt || Date.now()).toLocaleDateString(),
+    description: `Payment for Order #ORD${o.id}`,
+    amount: `₹${o.total || o.totalAmount || 0}`,
+    type: 'Product Sale',
+    status: o.status || 'Completed',
+    isNegative: false
+  }));
+
   return (
     <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl overflow-hidden mt-6 hover-card opacity-0 animate-fade-in-up" style={{ animationDelay: '1.0s' }}>
       <div className="p-5 border-b border-slate-100 dark:border-[#334155]">
@@ -30,7 +34,7 @@ export const EarningsTable = () => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx, index) => (
+            {transactions.length > 0 ? transactions.map((tx, index) => (
               <tr key={tx.id} className={`group hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors ${index !== transactions.length - 1 ? 'border-b border-slate-100 dark:border-[#334155]' : ''}`}>
                 <td className="py-4 px-6 text-sm text-slate-600 dark:text-[#CBD5E1]">{tx.date}</td>
                 <td className="py-4 px-6 text-sm font-medium text-slate-800 dark:text-[#F8FAFC]">{tx.id}</td>
@@ -45,7 +49,13 @@ export const EarningsTable = () => {
                   </span>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="6" className="py-8 text-center text-slate-500 dark:text-slate-400 text-sm font-medium">
+                  No transactions found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -53,7 +63,7 @@ export const EarningsTable = () => {
       {/* Pagination */}
       <div className="p-4 border-t border-slate-100 dark:border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-slate-500 dark:text-[#94A3B8]">
-          Showing <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">1</span> to <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">6</span> of <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">22</span> transactions
+          Showing <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length > 0 ? 1 : 0}</span> to <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length}</span> of <span className="font-medium text-slate-800 dark:text-[#F8FAFC]">{transactions.length}</span> transactions
         </p>
         
         <div className="flex items-center gap-2">

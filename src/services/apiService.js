@@ -173,6 +173,35 @@ export const apiService = {
   },
 
   // Add more API methods as needed
+  getMe: async (token) => {
+    return fetchWithRetry('/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+
+  getOrders: async (token) => {
+    return fetchWithRetry('/orders', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+
+  getEarnings: async (token) => {
+    // If backend doesn't have this yet, it should return mock-like 0. 
+    // We will just return empty for now, FarmerContext will handle it.
+    try {
+      return await fetchWithRetry('/earnings', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (e) {
+      // Graceful fallback if endpoint doesn't exist
+      return { success: true, data: { total: 0, weekly: 0 } };
+    }
+  },
+
   checkHealth: async () => {
     try {
       await fetchWithRetry('/health', { timeout: 3000 });

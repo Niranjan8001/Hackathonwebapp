@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Landmark, ArrowRight, CheckCircle2, Loader2, Check } from 'lucide-react';
+import { Landmark, ArrowRight, CheckCircle2, Loader2, Check, Sprout } from 'lucide-react';
+import { useFarmerContext } from '../../context/FarmerContext';
 
 const CountUp = ({ end, duration = 1000, prefix = "", suffix = "" }) => {
   const [count, setCount] = useState(0);
@@ -93,6 +94,11 @@ const PayoutButton = () => {
 };
 
 export const EarningsRightPanel = () => {
+  const { totalEarnings = 0, products = [] } = useFarmerContext();
+  const netEarnings = totalEarnings * 0.9;
+  const deliveryCharges = totalEarnings * 0.05;
+  const refundsReturns = totalEarnings > 0 ? 1500 : 0; // fallback or calculated
+
   return (
     <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
       
@@ -105,7 +111,7 @@ export const EarningsRightPanel = () => {
         
         <p className="text-xs text-slate-500 dark:text-[#94A3B8]">Available for Payout</p>
         <h2 className="text-3xl font-bold text-slate-800 dark:text-[#F8FAFC] mt-1">
-          <CountUp end="₹22,150" prefix="₹" />
+          <CountUp end={netEarnings} prefix="₹" />
         </h2>
         <p className="text-[10px] text-slate-500 dark:text-[#94A3B8] mt-1 uppercase tracking-wider">Transferred to your bank</p>
         
@@ -137,12 +143,12 @@ export const EarningsRightPanel = () => {
         </div>
         
         <div className="space-y-1">
-          <SummaryItem label="Total Earnings" value="₹24,560" />
-          <SummaryItem label="Delivery Charges" value="₹980" isGreen />
-          <SummaryItem label="Other Income" value="₹130" isGreen />
-          <SummaryItem label="Refunds & Returns" value="₹1,500" isRed />
+          <SummaryItem label="Total Earnings" value={`₹${totalEarnings}`} />
+          <SummaryItem label="Delivery Charges" value={`₹${deliveryCharges}`} isGreen />
+          <SummaryItem label="Other Income" value="₹0" isGreen />
+          <SummaryItem label="Refunds & Returns" value={`₹${refundsReturns}`} isRed />
           <div className="pt-2 mt-2 border-t border-slate-100 dark:border-[#334155]">
-            <SummaryItem label="Net Earnings" value="₹22,150" isGreen />
+            <SummaryItem label="Net Earnings" value={`₹${netEarnings}`} isGreen />
           </div>
         </div>
       </div>
@@ -155,22 +161,22 @@ export const EarningsRightPanel = () => {
         </div>
         
         <div className="space-y-4">
-          {[
-            { name: 'Fresh Tomatoes', orders: '75 orders', value: '₹7,560', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=100&h=100&fit=crop', delay: '0.7s' },
-            { name: 'Potatoes', orders: '40 orders', value: '₹4,320', img: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=100&h=100&fit=crop', delay: '0.8s' },
-            { name: 'Cucumbers', orders: '35 orders', value: '₹3,280', img: 'https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=100&h=100&fit=crop', delay: '0.9s' },
-            { name: 'Red Onions', orders: '28 orders', value: '₹2,850', img: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=100&h=100&fit=crop', delay: '1.0s' },
-            { name: 'Whole Wheat', orders: '20 orders', value: '₹2,150', img: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop', delay: '1.1s' },
-          ].map((prod) => (
-            <div key={prod.name} className="flex items-center gap-3 opacity-0 animate-fade-in-up" style={{ animationDelay: prod.delay }}>
-              <img src={prod.img} alt={prod.name} className="w-10 h-10 rounded-lg object-cover border border-slate-100 dark:border-[#334155] shrink-0" />
+          {products.length > 0 ? products.slice(0, 5).map((prod, i) => (
+            <div key={prod.id || i} className="flex items-center gap-3 opacity-0 animate-fade-in-up" style={{ animationDelay: `${0.7 + i * 0.1}s` }}>
+              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 dark:border-[#334155] shrink-0 bg-slate-100 flex items-center justify-center">
+                {prod.image ? <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" /> : <Sprout className="w-5 h-5 text-slate-400" />}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 dark:text-[#F8FAFC] truncate">{prod.name}</p>
-                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">{prod.orders}</p>
+                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">{prod.sold || '0 orders'}</p>
               </div>
-              <p className="text-sm font-bold text-slate-800 dark:text-[#F8FAFC]">{prod.value}</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-[#F8FAFC]">{prod.price}</p>
             </div>
-          ))}
+          )) : (
+            <div className="py-6 text-center text-slate-500 dark:text-slate-400 text-sm font-medium">
+              No product sales yet
+            </div>
+          )}
         </div>
       </div>
 

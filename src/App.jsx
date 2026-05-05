@@ -54,6 +54,17 @@ const MainLayout = ({ children }) => {
 };
 
 const AppRoutes = () => {
+  const { isAppReady } = useFarmerContext();
+
+  if (!isAppReady) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center flex-col gap-4">
+        <div className="w-8 h-8 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+        <p className="text-white/40 text-xs tracking-widest uppercase font-bold">Initializing System...</p>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/" element={<Login />} />

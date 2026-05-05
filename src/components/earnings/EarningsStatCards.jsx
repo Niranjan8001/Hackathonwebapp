@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Wallet, ShoppingCart, TrendingUp, Clock } from 'lucide-react';
+import { useFarmerContext } from '../../context/FarmerContext';
 
 const CountUp = ({ end, duration = 1000, prefix = "", suffix = "" }) => {
   const [count, setCount] = useState(0);
@@ -92,52 +93,58 @@ const Card = ({ title, value, change, icon: Icon, iconColor, bgColor, hasSparkli
 };
 
 export const EarningsStatCards = () => {
+  const { totalEarnings, orders = [] } = useFarmerContext();
+  const netEarnings = totalEarnings * 0.9; // example calculation
+  const pendingPayout = orders.filter(o => o.status === 'Pending').reduce((sum, o) => sum + (o.total || o.totalAmount || 0), 0);
+  const pendingOrdersCount = orders.filter(o => o.status === 'Pending').length;
+  const avgOrderValue = orders.length > 0 ? (totalEarnings / orders.length).toFixed(0) : 0;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
       <Card 
         title="Total Earnings" 
-        value="₹24,560" 
-        change="+18%" 
+        value={`₹${totalEarnings}`} 
+        change={totalEarnings > 0 ? "+18%" : "0%"} 
         icon={DollarSign} 
         iconColor="text-green-600 dark:text-green-400" 
         bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline
+        hasSparkline={totalEarnings > 0}
         delay="0.1s"
       />
       <Card 
         title="Net Earnings" 
-        value="₹22,150" 
-        change="+16%" 
+        value={`₹${netEarnings}`} 
+        change={netEarnings > 0 ? "+16%" : "0%"} 
         icon={Wallet} 
         iconColor="text-green-600 dark:text-green-400" 
         bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline
+        hasSparkline={netEarnings > 0}
         delay="0.2s"
       />
       <Card 
         title="Orders" 
-        value="32" 
-        change="+10%" 
+        value={orders.length.toString()} 
+        change={orders.length > 0 ? "+10%" : "0%"} 
         icon={ShoppingCart} 
         iconColor="text-green-600 dark:text-green-400" 
         bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline
+        hasSparkline={orders.length > 0}
         delay="0.3s"
       />
       <Card 
         title="Average Order Value" 
-        value="₹767" 
-        change="+8%" 
+        value={`₹${avgOrderValue}`} 
+        change={avgOrderValue > 0 ? "+8%" : "0%"} 
         icon={TrendingUp} 
         iconColor="text-green-600 dark:text-green-400" 
         bgColor="bg-green-50 dark:bg-green-500/10"
-        hasSparkline
+        hasSparkline={avgOrderValue > 0}
         delay="0.4s"
       />
       <Card 
         title="Pending Payout" 
-        value="₹2,410" 
-        extraText="2 orders"
+        value={`₹${pendingPayout}`} 
+        extraText={`${pendingOrdersCount} orders`}
         icon={Clock} 
         iconColor="text-orange-500" 
         bgColor="bg-orange-50 dark:bg-orange-500/10"

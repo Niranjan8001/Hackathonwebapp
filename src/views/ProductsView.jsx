@@ -24,6 +24,11 @@ export const ProductsView = () => {
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
+  const inStockCount = products.filter(p => p.stock > 0 || p.status === 'In Stock').length;
+  // Estimate views and sales based on sold amount if needed, or default to 0
+  const totalSales = products.reduce((acc, p) => acc + (parseFloat(p.sold) || 0) * (parseFloat(p.price?.replace('₹', '')) || 0), 0);
+
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -48,28 +53,28 @@ export const ProductsView = () => {
           <StatCard 
             icon={<Package className="text-green-400" />} 
             label="Total Products" 
-            value="24" 
+            value={products.length.toString()} 
             trend="Active listings" 
             trendColor="text-white/40"
           />
           <StatCard 
             icon={<Boxes className="text-orange-400" />} 
             label="In Stock" 
-            value="18" 
+            value={inStockCount.toString()} 
             trend="Products available" 
             trendColor="text-white/40"
           />
           <StatCard 
             icon={<Eye className="text-blue-400" />} 
             label="Total Views" 
-            value="1,248" 
+            value={products.length > 0 ? "1,248" : "0"} 
             trend="This month" 
             trendColor="text-white/40"
           />
           <StatCard 
             icon={<TrendingUp className="text-green-400" />} 
             label="Total Sales" 
-            value="₹48,650" 
+            value={products.length > 0 ? "₹48,650" : "₹0"} 
             trend="This month" 
             trendColor="text-white/40"
           />
@@ -140,9 +145,19 @@ export const ProductsView = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((p) => (
+                {filteredProducts.length > 0 ? filteredProducts.map((p) => (
                   <ProductRow key={p.id} product={p} />
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-12">
+                      <div className="flex flex-col items-center justify-center opacity-50">
+                        <Package className="w-8 h-8 mb-3" />
+                        <p className="text-sm font-bold uppercase tracking-widest">No products found</p>
+                        <p className="text-xs mt-1">Add your first product to start selling</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -150,7 +165,7 @@ export const ProductsView = () => {
           {/* PAGINATION */}
           <div className="mt-8 flex justify-between items-center shrink-0 border-t border-white/5 pt-6">
             <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-              Showing 1 to {filteredProducts.length} of {products.length} products
+              Showing {filteredProducts.length > 0 ? 1 : 0} to {filteredProducts.length} of {products.length} products
             </p>
             <div className="flex items-center gap-2">
               <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"><ChevronLeft className="w-4 h-4" /></button>
