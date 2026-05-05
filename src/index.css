@@ -1,0 +1,508 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant max-xs (@media (max-width: 420px));
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+@theme {
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
+  --color-brand-primary: #16a34a;
+  --color-brand-secondary: #14532d;
+  --color-brand-accent: #4ade80;
+
+  /* Custom Breakpoints */
+  --breakpoint-xs: 320px;
+  --breakpoint-sm-mobile: 481px;
+  --breakpoint-tablet: 769px;
+  --breakpoint-laptop: 1025px;
+  --breakpoint-desktop: 1441px;
+}
+
+@layer base {
+  html {
+    font-size: clamp(14px, 1vw + 2px, 18px);
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-[#020617] dark:text-[#F8FAFC] transition-colors duration-200;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .fluid-container {
+    width: 100%;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 5vw, 3rem);
+    padding-right: clamp(1rem, 5vw, 3rem);
+  }
+
+  .text-fluid-h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); }
+  .text-fluid-h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); }
+  .text-fluid-h3 { font-size: clamp(1.2rem, 2.5vw, 1.8rem); }
+  .text-fluid-base { font-size: clamp(0.875rem, 1.2vw, 1.125rem); }
+  .text-fluid-sm { font-size: clamp(0.75rem, 1vw, 0.875rem); }
+
+  .spacing-fluid-y { padding-top: clamp(1rem, 4vh, 4rem); padding-bottom: clamp(1rem, 4vh, 4rem); }
+  .gap-fluid { gap: clamp(1rem, 2vw, 2rem); }
+}
+
+.bg-login-hero {
+  background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)), url('./assets/farm_background_v2.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+.glass-card-dark {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.feature-icon-box {
+  @apply w-10 h-10 rounded-xl flex items-center justify-center;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sweep {
+  from {
+    stroke-dashoffset: 251.2;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1.2s ease-out forwards;
+}
+
+.animate-draw {
+  animation: draw 1.5s ease-in-out forwards;
+}
+
+.animate-sweep {
+  animation: sweep 1.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.hover-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 1s linear infinite;
+}
+
+.animate-checkmark {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkmark 0.5s ease-out forwards;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-[#020617] dark:text-[#F8FAFC] transition-colors duration-200;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DELIVERY TIMELINE — PREMIUM ANIMATIONS & VISUAL ENHANCEMENTS
+   Pure CSS only. Targets existing .timeline-* classes and data attrs.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ──────────────────────────────────────────────────── */
+
+@keyframes tl-gradient-flow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes tl-node-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tl-pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  70%  { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes tl-icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+
+@keyframes tl-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes tl-connector-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes tl-gradient-flow-v {
+  0%   { background-position: 50% 0%; }
+  100% { background-position: 50% 200%; }
+}
+
+/* ── Step Base — position context + smooth transitions ──────────── */
+
+.timeline-step {
+  position: relative;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+/* ── Node Base — solid opaque background so connector line doesn't bleed through */
+
+.timeline-node {
+  background-color: #ffffff;
+  z-index: 1;
+}
+
+:where(.dark) .timeline-node {
+  background-color: #1E293B;
+}
+
+.timeline-step[data-done="true"] .timeline-node {
+  background-color: #dcfce7;
+}
+
+:where(.dark) .timeline-step[data-done="true"] .timeline-node {
+  background-color: #0a2d1a;
+}
+
+/* ── Completed Step Nodes — glow + pop-in ───────────────────────── */
+
+.timeline-step[data-done="true"] .timeline-node {
+  animation: tl-node-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow:
+    0 0 12px rgba(34, 197, 94, 0.3),
+    0 0 24px rgba(34, 197, 94, 0.1);
+}
+
+:where(.dark) .timeline-step[data-done="true"] .timeline-node {
+  box-shadow:
+    0 0 14px rgba(74, 222, 128, 0.25),
+    0 0 28px rgba(74, 222, 128, 0.08);
+}
+
+/* ── Active Step — pulse ring + icon breathing ──────────────────── */
+
+.timeline-step.is-active .timeline-node {
+  position: relative;
+  transform: scale(1.08);
+  box-shadow:
+    0 0 16px rgba(34, 197, 94, 0.35),
+    0 0 32px rgba(34, 197, 94, 0.12);
+}
+
+.timeline-step.is-active .timeline-node::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 197, 94, 0.4);
+  animation: tl-pulse-ring 2s ease-out infinite;
+  pointer-events: none;
+}
+
+:where(.dark) .timeline-step.is-active .timeline-node::after {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.timeline-step.is-active .timeline-node svg {
+  animation: tl-icon-pulse 2s ease-in-out infinite;
+}
+
+/* ── Upcoming Steps — dimmed ────────────────────────────────────── */
+
+.timeline-step[data-done="false"]:not(.is-active) {
+  opacity: 0.55;
+}
+
+.timeline-step[data-done="false"]:not(.is-active) .timeline-node {
+  backdrop-filter: blur(2px);
+}
+
+/* ── Hover Micro Interactions ───────────────────────────────────── */
+
+.timeline-step:hover {
+  opacity: 1 !important;
+}
+
+.timeline-step:hover .timeline-node {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 14px rgba(34, 197, 94, 0.2),
+    0 0 6px rgba(0, 0, 0, 0.05);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timeline-step.is-active:hover .timeline-node {
+  transform: scale(1.1);
+}
+
+.timeline-step:hover .timeline-label {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+
+.timeline-step:hover .timeline-date {
+  opacity: 1;
+  color: #64748b;
+  transition: all 300ms ease-in-out;
+}
+
+:where(.dark) .timeline-step:hover .timeline-date {
+  color: #94a3b8;
+}
+
+/* ── Active Connector — animated gradient flow ──────────────────── */
+
+.timeline-connector[data-done="true"] > div:last-child,
+.tl-active-fill {
+  background: linear-gradient(
+    90deg,
+    #22c55e 0%,
+    #4ade80 25%,
+    #86efac 50%,
+    #4ade80 75%,
+    #22c55e 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: tl-gradient-flow 3s linear infinite;
+}
+
+:where(.dark) .timeline-connector[data-done="true"] > div:last-child,
+:where(.dark) .tl-active-fill {
+  background: linear-gradient(
+    90deg,
+    #16a34a 0%,
+    #4ade80 25%,
+    #86efac 50%,
+    #4ade80 75%,
+    #16a34a 100%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+/* Connector grow-in origin */
+.timeline-connector[data-done="true"] > div:last-child {
+  transform-origin: left center;
+}
+
+/* Connector soft shadow */
+.timeline-connector {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+/* Shimmer overlay for partial (in-progress) connector */
+.tl-shimmer-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.tl-shimmer-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: tl-shimmer 2s ease-in-out infinite;
+}
+
+:where(.dark) .tl-shimmer-overlay::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+}
+
+/* ── Mobile Vertical — gradient connector ───────────────────────── */
+
+@media (max-width: 639px) {
+  .timeline-connector[data-done="true"] {
+    background: linear-gradient(
+      180deg,
+      #22c55e 0%,
+      #4ade80 50%,
+      #22c55e 100%
+    ) !important;
+    background-size: 100% 200% !important;
+    animation: tl-gradient-flow-v 3s linear infinite;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+  }
+
+  :where(.dark) .timeline-connector[data-done="true"] {
+    background: linear-gradient(
+      180deg,
+      #16a34a 0%,
+      #4ade80 50%,
+      #16a34a 100%
+    ) !important;
+    background-size: 100% 200% !important;
+  }
+}
+
+/* ── Staggered Entrance — nodes pop in sequentially ─────────────── */
+
+.timeline-step[data-step="0"] .timeline-node { animation-delay: 0ms; }
+.timeline-step[data-step="1"] .timeline-node { animation-delay: 150ms; }
+.timeline-step[data-step="2"] .timeline-node { animation-delay: 300ms; }
+.timeline-step[data-step="3"] .timeline-node { animation-delay: 450ms; }
+
+/* ── Staggered Entrance — labels fade in sequentially ───────────── */
+
+.timeline-label,
+.timeline-date {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.timeline-step[data-step="0"] .timeline-label,
+.timeline-step[data-step="0"] .timeline-date { animation-delay: 100ms; }
+.timeline-step[data-step="1"] .timeline-label,
+.timeline-step[data-step="1"] .timeline-date { animation-delay: 250ms; }
+.timeline-step[data-step="2"] .timeline-label,
+.timeline-step[data-step="2"] .timeline-date { animation-delay: 400ms; }
+.timeline-step[data-step="3"] .timeline-label,
+.timeline-step[data-step="3"] .timeline-date { animation-delay: 550ms; }
+
+/* Glassmorphism Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Animations */
+@keyframes vine-grow {
+  from { width: 0; opacity: 0; }
+  to { width: 100%; opacity: 1; }
+}
+
+.animate-vine {
+  animation: vine-grow 0.5s ease-out forwards;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Gradient Text */
+.text-gradient-green {
+  background: linear-gradient(135deg, #4ade80 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
