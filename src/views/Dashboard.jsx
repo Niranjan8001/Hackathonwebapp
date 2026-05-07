@@ -14,7 +14,7 @@ export const Dashboard = () => {
   return (
     <div className="p-4 space-y-6 pb-24">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">Namaste, Farmer</h2>
+        <h2 className="text-2xl font-bold text-slate-800">Namaste, {currentUser?.name || 'Farmer'}</h2>
         <p className="text-slate-500">Here's your farm summary today.</p>
       </div>
 

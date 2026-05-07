@@ -121,20 +121,23 @@ export const DesktopLayout = ({ children }) => {
               <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-[#F8FAFC] dark:border-[#020617]"></span>
             </button>
 
-            {/* Profile Info */}
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-[#334155]">
-              <div className="w-8 h-8 tablet:w-10 tablet:h-10 rounded-full border-2 border-slate-100 dark:border-[#1E293B] overflow-hidden shrink-0">
-                <img 
-                  src={currentUser?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150"} 
-                  alt={currentUser?.displayName || "User"} 
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 tablet:w-10 tablet:h-10 rounded-full border-2 border-slate-100 dark:border-[#1E293B] overflow-hidden shrink-0 bg-green-500/10 flex items-center justify-center">
+                {currentUser?.profilePhoto ? (
+                  <img 
+                    src={`${currentUser.profilePhoto}${currentUser.profilePhoto.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                    alt={currentUser?.name || "User"} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Home className="w-4 h-4 text-green-500/40" />
+                )}
               </div>
               <div className="hidden desktop:block">
                 <p className="text-sm font-bold text-slate-800 dark:text-[#F8FAFC]">
-                  {currentUser?.displayName || "Ramesh Yadav"}
+                  {currentUser?.name || "Loading..."}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-[#94A3B8]">Farmer</p>
+                <p className="text-xs text-slate-500 dark:text-[#94A3B8] capitalize">{currentUser?.role || "Farmer"}</p>
               </div>
             </div>
           </div>

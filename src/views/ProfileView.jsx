@@ -73,11 +73,7 @@ const ProfileSummaryCard = ({ user }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateProfileImages(null, reader.result);
-      };
-      reader.readAsDataURL(file);
+      updateProfileImages(null, file);
     }
   };
 
@@ -101,12 +97,16 @@ const ProfileSummaryCard = ({ user }) => {
     <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 flex flex-col lg:flex-row items-center gap-10 opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
       <div className="flex flex-col items-center gap-4">
         <div className="relative group">
-          <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-white/10 overflow-hidden bg-white/5 relative z-10 shadow-2xl">
-            <img 
-              src={user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user?.name} 
-              alt={user?.name} 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-white/10 overflow-hidden bg-white/5 relative z-10 shadow-2xl flex items-center justify-center">
+            {user?.profilePhoto ? (
+              <img 
+                src={`${user.profilePhoto}${user.profilePhoto.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                alt={user?.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-12 h-12 text-white/10" />
+            )}
           </div>
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20 rounded-full cursor-pointer" onClick={() => profileInputRef.current.click()}>
             <Camera className="w-8 h-8 text-white/80" />
@@ -248,8 +248,10 @@ const DocumentItem = ({ label, isVerified }) => (
       <div>
         <h4 className="text-sm font-black text-white">{label}</h4>
         <div className="flex items-center gap-2 mt-1">
-          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-          <span className="text-[9px] font-black text-green-400 uppercase tracking-[0.2em]">Verified</span>
+          <div className={`w-2 h-2 rounded-full ${isVerified ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-white/20'}`} />
+          <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isVerified ? 'text-green-400' : 'text-white/20'}`}>
+            {isVerified ? 'Verified' : 'Pending'}
+          </span>
         </div>
       </div>
     </div>
@@ -478,7 +480,7 @@ export const ProfileView = () => {
                       ) : (
                         <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-10 group hover:bg-white/[0.08] transition-all cursor-pointer relative overflow-hidden" onClick={() => setIsEditingBio(true)}>
                           <p className="text-white/60 text-sm leading-relaxed font-medium italic relative z-10">
-                            {currentUser?.bio || 'I am a passionate farmer with over 8 years of experience in organic farming. I specialize in growing wheat, rice, and vegetables using sustainable practices.'}
+                            {currentUser?.bio || 'No bio provided. Click to add a bio about your farm.'}
                           </p>
                           <div className="absolute -right-4 -bottom-4 opacity-0 group-hover:opacity-5 transition-opacity">
                              <Type className="w-32 h-32" />
@@ -495,8 +497,25 @@ export const ProfileView = () => {
                       </div>
                       
                       <div className="space-y-4">
-                        <DocumentItem label="Aadhaar Card" isVerified />
-                        <DocumentItem label="Farmer ID" isVerified />
+                        {currentUser?.certifications?.length > 0 ? (
+                          currentUser.certifications.map((cert, index) => (
+                            <DocumentItem 
+                              key={cert.id || index} 
+                              label={cert.title} 
+                              isVerified={currentUser.isVerified} 
+                            />
+                          ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-10 px-6 bg-white/5 border border-white/5 border-dashed rounded-[2rem] text-center">
+                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-white/10 mb-4">
+                              <FileText className="w-8 h-8" />
+                            </div>
+                            <h4 className="text-sm font-black text-white/40 uppercase tracking-widest">No documents uploaded</h4>
+                            <p className="text-[10px] text-white/20 mt-2 font-bold max-w-[200px] leading-relaxed uppercase tracking-widest">
+                              Please upload your identification documents to get verified.
+                            </p>
+                          </div>
+                        )}
                       </div>
                       
                       <button className="w-full mt-4 bg-white/5 hover:bg-white/10 border border-white/10 border-dashed py-4 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white/40 transition-all flex items-center justify-center gap-3">

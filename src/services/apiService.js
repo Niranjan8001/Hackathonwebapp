@@ -244,7 +244,7 @@ export const apiService = {
       headers: {
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(profileData)
+      body: profileData instanceof FormData ? profileData : JSON.stringify(profileData)
     });
   }
 };

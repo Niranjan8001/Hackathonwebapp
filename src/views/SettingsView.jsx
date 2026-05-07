@@ -1,6 +1,8 @@
 import React from 'react';
 import { DesktopLayout } from '../components/layout/DesktopLayout';
 import { Settings, User, Bell, Shield, CreditCard, HelpCircle, LogOut } from 'lucide-react';
+import { useFarmerContext } from '../context/FarmerContext';
+import { useNavigate } from 'react-router-dom';
 
 const SettingsSection = ({ icon: Icon, title, description, children }) => (
   <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-xl overflow-hidden mb-6">
@@ -33,6 +35,9 @@ const Toggle = ({ enabled }) => (
 );
 
 export const SettingsView = () => {
+  const { currentUser, logout } = useFarmerContext();
+  const navigate = useNavigate();
+
   return (
     <DesktopLayout>
       <div className="px-4 md:px-8 py-8 max-w-4xl">
@@ -46,19 +51,19 @@ export const SettingsView = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-[#94A3B8] uppercase mb-1.5">Full Name</label>
-              <input type="text" defaultValue="Ramesh Yadav" className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
+              <input type="text" defaultValue={currentUser?.name || ''} className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-[#94A3B8] uppercase mb-1.5">Email Address</label>
-              <input type="email" defaultValue="ramesh@yadavorganics.in" className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
+              <input type="email" defaultValue={currentUser?.email || ''} className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-[#94A3B8] uppercase mb-1.5">Phone Number</label>
-              <input type="text" defaultValue="+91 98765 43210" className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
+              <input type="text" defaultValue={currentUser?.phone || ''} className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-[#94A3B8] uppercase mb-1.5">Farm Location</label>
-              <input type="text" defaultValue="Jaipur, Rajasthan" className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
+              <input type="text" defaultValue={currentUser?.locationText || ''} className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-green-500" />
             </div>
           </div>
           <button className="mt-6 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -95,7 +100,10 @@ export const SettingsView = () => {
         </SettingsSection>
 
         <div className="flex items-center gap-4 pt-4">
-          <button className="flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 font-medium hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+          <button 
+            onClick={() => { logout(); navigate('/'); }}
+            className="flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 font-medium hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Logout
           </button>

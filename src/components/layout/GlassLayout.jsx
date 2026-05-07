@@ -82,12 +82,22 @@ export const GlassLayout = ({ children }) => {
               </div>
 
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1.5 pr-4 hover:bg-white/10 transition-all cursor-pointer group">
-                <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/10">
-                  <img src={currentUser?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"} alt="User" className="w-full h-full object-cover" />
+                <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/10 bg-green-500/10 flex items-center justify-center">
+                  {currentUser?.profilePhoto ? (
+                    <img 
+                      src={`${currentUser.profilePhoto}${currentUser.profilePhoto.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                      alt="User" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-green-400/40" />
+                  )}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-white group-hover:text-green-400 transition-colors">{currentUser?.displayName || 'Arjun Singh'}</p>
-                  <p className="text-[10px] font-medium text-white/40">Farmer</p>
+                  <p className="text-xs font-bold text-white group-hover:text-green-400 transition-colors">
+                    {currentUser?.name || 'Loading...'}
+                  </p>
+                  <p className="text-[10px] font-medium text-white/40 capitalize">{currentUser?.role || 'Farmer'}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-white/20" />
               </div>

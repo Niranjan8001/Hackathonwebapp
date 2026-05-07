@@ -26,9 +26,12 @@ export const CompleteProfile = () => {
   const profileInputRef = useRef(null);
   const certInputRef = useRef(null);
 
+  const [profileFile, setProfileFile] = useState(null);
+
   const handleProfileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfileFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setProfilePreview(reader.result);
       reader.readAsDataURL(file);
@@ -49,12 +52,10 @@ export const CompleteProfile = () => {
     if (!profilePreview || !bio || !certPreview) return;
     
     setLoading(true);
-    // Simulate save network delay
-    await new Promise(r => setTimeout(r, 1500));
     
-    // In our mock context, updateProfileImages and addCertification already handle persistence
-    updateProfileImages(null, profilePreview);
-    updateBio(bio);
+    // In our robust context, updateProfileImages handles FormData/Cloudinary
+    await updateProfileImages(null, profileFile);
+    await updateBio(bio);
     addCertification({ title: 'Identity Verification', issuer: certName, file: certPreview });
     
     // In a real app, we'd update bio and isProfileComplete in the context as well

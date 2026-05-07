@@ -46,6 +46,7 @@ export const registerUser = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      profilePhoto: user.profilePhoto,
       token: generateToken(user._id)
     });
 
@@ -76,6 +77,7 @@ export const loginUser = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        profilePhoto: user.profilePhoto,
         token: generateToken(user._id)
       });
     } else {
@@ -105,10 +107,15 @@ export const updateProfile = async (req, res, next) => {
       return sendResponse(res, 404, false, 'User not found');
     }
 
-    const updates = req.body;
+    const updates = { ...req.body };
     
-    // Handle specific array pushes if needed, or just overwrite
-    // For certifications, we might want to push
+    // Handle Profile Photo Upload via Cloudinary
+    if (req.file) {
+      console.log("DEBUG: Processing Profile Photo Upload:", req.file.path);
+      updates.profilePhoto = req.file.path; // Cloudinary secure_url
+    }
+
+    // Handle specific array pushes if needed
     if (updates.certification) {
       user.certifications.push(updates.certification);
       delete updates.certification;
@@ -120,7 +127,9 @@ export const updateProfile = async (req, res, next) => {
 
     await user.save();
 
-    sendResponse(res, 200, true, 'Profile updated successfully', user);
+    // Return the updated user without password
+    const updatedUser = await User.findById(user._id).select('-password');
+    sendResponse(res, 200, true, 'Profile updated successfully', updatedUser);
   } catch (error) {
     next(error);
   }

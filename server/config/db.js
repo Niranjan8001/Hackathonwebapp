@@ -5,7 +5,9 @@ const connectDB = async () => {
     if (!process.env.MONGO_URI) {
       throw new Error('MONGO_URI is not defined');
     }
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      family: 4,
+    })
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Database Connection Failed: ${error.message}`);

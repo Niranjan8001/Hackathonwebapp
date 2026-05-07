@@ -31,8 +31,14 @@ export const FarmerProvider = ({ children }) => {
       const profileRes = await apiService.getMe(token);
       
       if (profileRes.success && profileRes.data) {
-        setCurrentUser(profileRes.data);
-        setIsProfileComplete(!!profileRes.data.farmName); 
+        // Standardize photoURL -> profilePhoto for the state
+        const userData = {
+          ...profileRes.data,
+          profilePhoto: profileRes.data.profilePhoto || profileRes.data.photoURL
+        };
+        
+        setCurrentUser(userData);
+        setIsProfileComplete(!!userData.farmName); 
         setIsAuthenticated(true);
         
         // Fetch Real Data 
@@ -92,6 +98,8 @@ export const FarmerProvider = ({ children }) => {
       const res = await apiService.login(email, password);
       if (res.success) {
         localStorage.setItem('token', res.data.token);
+        // Clear any old mock data from localStorage if it exists
+        localStorage.removeItem('demo_mode');
         await fetchUserData(res.data.token);
         return true;
       }
@@ -158,9 +166,15 @@ export const FarmerProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return false;
+      
       const res = await apiService.updateProfile(profileData, token);
       if (res.success) {
-        setCurrentUser(res.data);
+        // Standardize photoURL -> profilePhoto
+        const updatedData = {
+          ...res.data,
+          profilePhoto: res.data.profilePhoto || res.data.photoURL
+        };
+        setCurrentUser(updatedData);
         return true;
       }
       return false;
@@ -172,11 +186,13 @@ export const FarmerProvider = ({ children }) => {
 
   const updateBio = (bio) => updateProfile({ bio });
   
-  const updateProfileImages = (banner, profile) => {
-    const updates = {};
-    if (banner) updates.bannerImage = banner;
-    if (profile) updates.photoURL = profile;
-    updateProfile(updates).then(() => setIsProfileComplete(true));
+  const updateProfileImages = (banner, profileFile) => {
+    // profileFile should be an actual File object now, not a Base64 string
+    const formData = new FormData();
+    if (banner) formData.append('bannerImage', banner);
+    if (profileFile) formData.append('profilePhoto', profileFile);
+    
+    updateProfile(formData).then(() => setIsProfileComplete(true));
   };
 
   const addCertification = (cert) => {
