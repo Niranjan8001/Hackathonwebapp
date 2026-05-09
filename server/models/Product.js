@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  owner: {
+  farmer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,

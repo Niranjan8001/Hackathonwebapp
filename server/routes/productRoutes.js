@@ -1,4 +1,3 @@
-import multer from "multer";
 import express from 'express';
 import { createProduct, getProducts, getProductById, deleteProduct, getMyProducts } from '../controllers/productController.js';
 import { getCategories } from '../controllers/categoryController.js';

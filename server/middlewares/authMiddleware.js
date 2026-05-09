@@ -11,6 +11,7 @@ export const verifyToken = async (req, res, next) => {
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.userId = decoded.id;
 
       // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
@@ -20,7 +21,7 @@ export const verifyToken = async (req, res, next) => {
         return sendResponse(res, 404, false, 'User not found');
       }
 
-      next();
+      return next();
     } catch (error) {
       console.error('Token Verification Error:', error.message);
       return sendResponse(res, 401, false, 'Not authorized, token failed');

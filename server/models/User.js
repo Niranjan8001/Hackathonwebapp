@@ -100,6 +100,19 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
+  verification: {
+    digilockerLinked: { type: Boolean, default: false },
+    digilockerId: String,
+    verifiedAt: Date,
+    verificationStatus: { 
+      type: String, 
+      enum: ['none', 'pending', 'verified', 'failed'], 
+      default: 'none' 
+    },
+    oauthState: String,
+    codeVerifier: String
+  },
+
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

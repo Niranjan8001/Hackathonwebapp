@@ -177,7 +177,7 @@ export const apiService = {
   },
 
   getProductsByFarmer: async (farmerId) => {
-    return fetchWithRetry(`/products?owner=${farmerId}`);
+    return fetchWithRetry(`/products?farmer=${farmerId}`);
   },
 
   addProduct: async (productData, token) => {
@@ -245,6 +245,15 @@ export const apiService = {
         'Authorization': `Bearer ${token}`
       },
       body: profileData instanceof FormData ? profileData : JSON.stringify(profileData)
+    });
+  },
+
+  initiateDigiLockerAuth: async (token) => {
+    return fetchWithRetry('/digilocker/auth', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
   }
 };

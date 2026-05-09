@@ -49,14 +49,14 @@ export const CompleteProfile = () => {
   };
 
   const handleSave = async () => {
-    if (!profilePreview || !bio || !certPreview) return;
+    if (!bio || !certPreview) return;
     
     setLoading(true);
     
     // In our robust context, updateProfileImages handles FormData/Cloudinary
     await updateProfileImages(null, profileFile);
     await updateBio(bio);
-    addCertification({ title: 'Identity Verification', issuer: certName, file: certPreview });
+    addCertification({ title: 'Aadhaar Card Verification', issuer: certName, file: certPreview });
     
     // In a real app, we'd update bio and isProfileComplete in the context as well
     // For now, redirecting to dashboard
@@ -64,7 +64,7 @@ export const CompleteProfile = () => {
     navigate('/dashboard');
   };
 
-  const isFormValid = profilePreview && bio.trim().length > 0 && certPreview;
+  const isFormValid = bio.trim().length > 0 && certPreview;
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black font-sans selection:bg-green-500/30">
@@ -117,8 +117,8 @@ export const CompleteProfile = () => {
               />
               <Feature 
                 icon={<ShieldCheck className="text-green-400 w-6 h-6" />} 
-                title="Government Certification" 
-                desc="Upload your ID or farmer card for verified status." 
+                title="Aadhaar Card" 
+                desc="Upload your Aadhaar card for verified status." 
               />
             </div>
 
@@ -157,7 +157,7 @@ export const CompleteProfile = () => {
                     <PlusCircle className="w-4 h-4" />
                   </div>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-4">Profile Photo (Max 5MB)</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-4">Profile Photo (Optional)</span>
                 <input type="file" ref={profileInputRef} className="hidden" accept="image/*" onChange={handleProfileUpload} />
               </div>
 
@@ -180,7 +180,7 @@ export const CompleteProfile = () => {
 
               {/* 3️⃣ Certification Upload */}
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 block">Govt. Certification / ID</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 block">Aadhaar Card (Mandatory)</label>
                 <div 
                   onClick={() => certInputRef.current.click()}
                   className="border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 hover:border-green-500/30 transition-all group"

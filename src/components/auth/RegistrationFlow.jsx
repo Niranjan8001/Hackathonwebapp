@@ -24,7 +24,7 @@ export const RegistrationFlow = () => {
     email: '',
     password: '',
     farmName: '',
-    location: '',
+    locationText: '',
     scale: 'Small Scale',
     crops: [],
     organic: false,
@@ -44,7 +44,7 @@ export const RegistrationFlow = () => {
                formData.password.length >= 6;
       case 2: 
         return formData.farmName.trim() !== '' && 
-               formData.location.trim() !== '';
+               formData.locationText.trim() !== '';
       case 3: 
         return formData.crops.length > 0;
       default: return true;
@@ -131,7 +131,17 @@ export const RegistrationFlow = () => {
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <AuthInput icon={<Globe />} placeholder="Farm Name *" value={formData.farmName} onChange={(v) => handleChange('farmName', v)} />
-              <AuthInput icon={<MapPin />} placeholder="Farm Location / City *" value={formData.location} onChange={(v) => handleChange('location', v)} />
+              <AuthInput 
+                icon={<MapPin />} 
+                placeholder="Farm Pincode *" 
+                value={formData.locationText} 
+                onChange={(v) => {
+                  // Only allow digits
+                  if (/^\d*$/.test(v)) {
+                    handleChange('locationText', v);
+                  }
+                }} 
+              />
               <select value={formData.scale} onChange={(e) => handleChange('scale', e.target.value)} className="w-full pl-4 pr-4 py-4 bg-white/[0.08] border border-white/10 rounded-2xl text-white focus:outline-none focus:border-green-500/50 backdrop-blur-md appearance-none font-medium">
                 <option value="Small Scale" className="bg-[#1E293B]">Small Scale</option>
                 <option value="Medium Scale" className="bg-[#1E293B]">Medium Scale</option>
@@ -143,7 +153,7 @@ export const RegistrationFlow = () => {
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                {['Wheat', 'Rice', 'Potatoes', 'Tomatoes'].map(crop => (
+                {['Commercial crops', 'Vegetables', 'Fruits', 'Grains and Pulses'].map(crop => (
                   <button key={crop} onClick={() => toggleCrop(crop)} className={`py-3 px-4 rounded-xl border transition-all flex items-center justify-between text-xs font-bold ${formData.crops.includes(crop) ? 'bg-white/20 border-white text-white' : 'bg-white/5 border-white/10 text-white/40'}`}>
                     {crop}
                     {formData.crops.includes(crop) && <CheckCircle2 className="w-3 h-3" />}

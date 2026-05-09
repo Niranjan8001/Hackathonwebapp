@@ -288,6 +288,35 @@ export const ProfileView = () => {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editedBio, setEditedBio] = useState('');
 
+  // DigiLocker State
+  const [digilockerLoading, setDigilockerLoading] = useState(false);
+
+  const handleDigiLockerAuth = async () => {
+    try {
+      setDigilockerLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Your session has expired. Please log in again.');
+        return;
+      }
+
+      const response = await apiService.initiateDigiLockerAuth(token);
+      
+      if (response.success && response.data.url) {
+        // Securely redirect to DigiLocker authorization page
+        console.log('DEBUG: Redirecting to DigiLocker:', response.data.url);
+        window.location.href = response.data.url;
+      } else {
+        throw new Error(response.message || 'Failed to initiate DigiLocker verification');
+      }
+    } catch (err) {
+      console.error('DigiLocker Initiation Error:', err);
+      alert(err.message || 'Failed to connect to DigiLocker. Please try again later.');
+    } finally {
+      setDigilockerLoading(false);
+    }
+  };
+
   // Sync state with currentUser
   useEffect(() => {
     if (currentUser) {
@@ -527,7 +556,98 @@ export const ProfileView = () => {
                 </motion.div>
               )}
 
-              {activeTab !== 'Personal Information' && (
+              {activeTab === 'Verification' && (
+                <motion.div 
+                  key="verification"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-12"
+                >
+                  <div className="flex flex-col lg:flex-row items-start gap-12">
+                    <div className="flex-1 space-y-8">
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-black text-white tracking-tight">Identity Verification</h3>
+                        <p className="text-xs text-white/20 font-bold uppercase tracking-widest">Connect your official government documents via DigiLocker</p>
+                      </div>
+
+                      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 space-y-8 relative overflow-hidden group">
+                        {/* Background Decoration */}
+                        <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-600/10 rounded-full blur-[100px] group-hover:bg-purple-600/20 transition-all duration-700" />
+                        
+                        <div className="relative z-10 space-y-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
+                              <ShieldCheck className="w-8 h-8 text-purple-400" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-black text-white">Official Verification</h4>
+                              <p className="text-sm text-white/40 font-medium italic">Powered by MeriPehchaan DigiLocker</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <p className="text-sm text-white/60 leading-relaxed max-w-xl">
+                              Get the <span className="text-green-400 font-bold">Verified Farmer</span> badge by linking your DigiLocker account. This builds trust with buyers and unlocks premium features on the platform.
+                            </p>
+                            
+                            <ul className="space-y-3">
+                              {[
+                                'Secure government-grade encryption',
+                                'Instant identity validation',
+                                'Verified Farmer badge on profile',
+                                'Priority placement in search results'
+                              ].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/30">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* DigiLocker Button */}
+                          <button
+                            onClick={handleDigiLockerAuth}
+                            disabled={digilockerLoading}
+                            className={`
+                              relative group/btn w-full lg:w-auto px-10 py-5 rounded-2xl
+                              bg-gradient-to-r from-purple-600 to-indigo-600
+                              hover:from-purple-500 hover:to-indigo-500
+                              transition-all duration-300 transform active:scale-[0.98]
+                              shadow-[0_10px_30px_rgba(147,51,234,0.3)]
+                              hover:shadow-[0_15px_40px_rgba(147,51,234,0.5)]
+                              disabled:opacity-50 disabled:cursor-not-allowed
+                              flex items-center justify-center gap-4
+                            `}
+                          >
+                            {/* Neon Glow Effect */}
+                            <div className="absolute inset-0 rounded-2xl bg-purple-500/20 blur-xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                            
+                            {digilockerLoading ? (
+                              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                <img 
+                                  src="https://upload.wikimedia.org/wikipedia/en/1/1e/DigiLocker_logo.png" 
+                                  alt="DigiLocker" 
+                                  className="w-8 h-8 object-contain brightness-0 invert" 
+                                />
+                                <span className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                                  Verify with Digi Locker
+                                </span>
+                                <ArrowRight className="w-4 h-4 text-white/50 group-hover/btn:translate-x-1 transition-transform" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab !== 'Personal Information' && activeTab !== 'Verification' && (
                 <motion.div 
                   key="placeholder"
                   initial={{ opacity: 0, scale: 0.95 }}

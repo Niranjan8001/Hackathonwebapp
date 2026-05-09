@@ -1,41 +1,39 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-
-import connectDB from './config/db.js';
-import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
-
-import authRoutes from './routes/authRoutes.js';
-import productRoutes from './routes/productRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
-import reviewRoutes from './routes/reviewRoutes.js';
-
+import dotenv from "dotenv";
 dotenv.config();
+
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
+import connectDB from "./config/db.js";
+import { errorHandler, notFound } from "./middlewares/errorMiddleware.js";
+
+import authRoutes from "./routes/authRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import digilockerRoutes from "./routes/digilocker.routes.js";
 
 // Connect to Database
 connectDB();
 
-
-
 const app = express();
-app.use(express.json());
 
 // Security Middlewares
 app.use(helmet());
 app.use(cors());
 
-// Body Parsers (Increased for Base64 Images)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Body Parsers
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
 });
-app.use('/api', limiter);
+app.use("/api", limiter);
 
 app.get("/", (req, res) => {
   res.json({
@@ -45,10 +43,11 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reviews', reviewRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/digilocker", digilockerRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

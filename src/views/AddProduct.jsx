@@ -24,6 +24,16 @@ import { useFarmerContext } from '../context/FarmerContext';
 import { GlassLayout } from '../components/layout/GlassLayout';
 import { apiService } from '../services/apiService';
 
+const FALLBACK_CATEGORIES = [
+  { _id: 'f1', name: 'Fruits' },
+  { _id: 'f2', name: 'Vegetables' },
+  { _id: 'f3', name: 'Grains and Pulses' },
+  { _id: 'f4', name: 'Commercial crops' },
+  { _id: 'f5', name: 'Dairy' },
+  { _id: 'f6', name: 'Organic' },
+  { _id: 'f7', name: 'Spices' }
+];
+
 export const AddProduct = () => {
   const navigate = useNavigate();
   const { updateProfile } = useFarmerContext(); // Reusing for generic updates if needed
@@ -59,9 +69,15 @@ export const AddProduct = () => {
     const fetchCategories = async () => {
       try {
         const res = await apiService.getCategories();
-        if (res.success) setCategories(res.data || []);
+        if (res.success && res.data && res.data.length > 0) {
+          setCategories(res.data);
+        } else {
+          console.warn("No categories found in database, using fallbacks.");
+          setCategories(FALLBACK_CATEGORIES);
+        }
       } catch (err) {
-        console.error("Failed to fetch categories:", err);
+        console.error("Failed to fetch categories, using fallbacks:", err);
+        setCategories(FALLBACK_CATEGORIES);
       } finally {
         setCategoriesLoading(false);
       }
