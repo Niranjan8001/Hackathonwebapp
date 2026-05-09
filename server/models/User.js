@@ -41,6 +41,61 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
 
+  farmSize: {
+    type: String,
+  },
+
+  farmUnit: {
+    type: String,
+  },
+
+  ownershipType: {
+    type: String,
+  },
+
+  primaryCrops: {
+    type: [String],
+    default: [],
+  },
+
+  otherCrops: {
+    type: [String],
+    default: [],
+  },
+
+  irrigationSource: {
+    type: String,
+  },
+
+  waterAvailability: {
+    type: String,
+  },
+
+  villageLocality: {
+    type: String,
+  },
+
+  district: {
+    type: String,
+  },
+
+  state: {
+    type: String,
+  },
+
+  pincode: {
+    type: String,
+  },
+
+  additionalNotes: {
+    type: String,
+  },
+
+  farmImages: {
+    type: [String],
+    default: [],
+  },
+
   locationText: {
     type: String,
   },
@@ -89,10 +144,12 @@ const userSchema = new mongoose.Schema({
   },
 
   // Bank Details
-  bankName: String,
-  accountHolder: String,
+  accountHolderName: String,
   accountNumber: String,
   ifscCode: String,
+  bankName: String,
+  accountType: String,
+  branchName: String,
 
   // Verification
   isVerified: {

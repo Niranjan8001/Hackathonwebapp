@@ -27,7 +27,14 @@ const Skeleton = ({ className }) => (
 );
 
 export const EarningsStatCards = () => {
-  const { realEarnings, realOrders = [], earningsLoading } = useFarmerContext();
+  const { 
+    realOrders = [], 
+    earningsLoading,
+    totalEarnings,
+    thisMonthEarnings,
+    pendingEarnings,
+    earningsPercentageChange 
+  } = useFarmerContext();
   
   if (earningsLoading) {
     return (
@@ -46,15 +53,15 @@ export const EarningsStatCards = () => {
     );
   }
 
-  const total = realEarnings?.total || 0;
-  const pendingOrders = realOrders.filter(o => o.status === 'Pending' || o.status === 'pending');
-  const pendingAmount = pendingOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const total = totalEarnings || 0;
+  const pendingOrders = realOrders.filter(o => o.status === 'Pending' || o.status === 'pending' || o.status === 'Processing');
+  const pendingAmount = pendingEarnings || 0;
   
   const stats = [
-    { label: 'Total Earnings', value: total, icon: <Wallet />, trend: '+12.5%', color: 'text-green-400' },
+    { label: 'Total Earnings', value: total, icon: <Wallet />, trend: total > 0 ? 'Lifetime' : 'No Data', color: 'text-green-400' },
     { label: 'Pending Amount', value: pendingAmount, icon: <Clock />, trend: `${pendingOrders.length} orders`, color: 'text-amber-400' },
     { label: 'Withdrawn Amount', value: 0, icon: <Landmark />, trend: '0 withdrawals', color: 'text-white/20' },
-    { label: 'This Month', value: total, icon: <TrendingUp />, trend: '+18.3%', color: 'text-green-400' }
+    { label: 'This Month', value: thisMonthEarnings || 0, icon: <TrendingUp />, trend: `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%`, color: earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400' }
   ];
 
   return (

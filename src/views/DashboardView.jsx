@@ -17,7 +17,7 @@ import {
 import { useFarmerContext } from '../context/FarmerContext';
 
 export const DashboardView = () => {
-  const { products = [], orders = [], totalEarnings = 0 } = useFarmerContext();
+  const { products = [], orders = [], totalEarnings = 0, earningsPercentageChange = 0 } = useFarmerContext();
   
   // Calculate some derived stats
   const pendingOrders = orders.filter(o => o.status === 'Pending').length;
@@ -32,9 +32,9 @@ export const DashboardView = () => {
           <StatCard 
             icon={<Wallet />} 
             label="Earnings" 
-            value={`₹${totalEarnings}`} 
-            trend={totalEarnings > 0 ? "+12.5%" : "0%"} 
-            trendUp={totalEarnings > 0} 
+            value={`₹${totalEarnings.toLocaleString('en-IN')}`} 
+            trend={totalEarnings > 0 ? `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%` : "0%"} 
+            trendUp={earningsPercentageChange >= 0} 
           />
           <StatCard 
             icon={<Clock />} 
@@ -91,11 +91,17 @@ export const DashboardView = () => {
               <span>May 29</span>
             </div>
 
-            <div className="mt-4 bg-green-500/5 border border-green-500/10 rounded-xl p-2.5 flex items-center gap-3 shrink-0">
-              <div className="bg-green-500/20 p-1 rounded-lg text-green-400">
-                <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+            <div className={`mt-4 ${earningsPercentageChange >= 0 ? 'bg-green-500/5 border-green-500/10' : 'bg-red-500/5 border-red-500/10'} border rounded-xl p-2.5 flex items-center gap-3 shrink-0`}>
+              <div className={`${earningsPercentageChange >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} p-1 rounded-lg`}>
+                {earningsPercentageChange >= 0 ? (
+                  <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                ) : (
+                  <TrendingDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                )}
               </div>
-              <p className="text-[9px] lg:text-[10px] font-bold text-white/60">Performance up <span className="text-green-400">12.5%</span> this month.</p>
+              <p className="text-[9px] lg:text-[10px] font-bold text-white/60">
+                Performance {earningsPercentageChange >= 0 ? 'up' : 'down'} <span className={earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400'}>{Math.abs(earningsPercentageChange)}%</span> this month.
+              </p>
             </div>
           </div>
 

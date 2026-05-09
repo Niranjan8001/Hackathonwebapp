@@ -32,6 +32,9 @@ const upload = {
   single: (fieldName) => (req, res, next) => {
     getUpload().single(fieldName)(req, res, next);
   },
+  fields: (fieldsArray) => (req, res, next) => {
+    getUpload().fields(fieldsArray)(req, res, next);
+  },
 };
 
 export default upload;

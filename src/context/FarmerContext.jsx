@@ -17,7 +17,7 @@ export const FarmerProvider = ({ children }) => {
   const [realProducts, setRealProducts] = useState([]);
   const [realOrders, setRealOrders] = useState([]);
   const [realReviews, setRealReviews] = useState([]);
-  const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0 });
+  const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: 0 });
   const [earningsLoading, setEarningsLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -55,17 +55,58 @@ export const FarmerProvider = ({ children }) => {
           setRealOrders(orders);
           
           // Calculate earnings from completed/delivered orders
-          const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Processing');
-          const totalEarnings = completedOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+          const deliveredOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'delivered');
+          const pendingOrders = orders.filter(o => o.status === 'Processing' || o.status === 'Pending' || o.status === 'pending' || o.status === 'accepted' || o.status === 'shipped');
+          
+          const totalEarnings = deliveredOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+          const pendingEarnings = pendingOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+          
+          const now = new Date();
           
           // Weekly earnings (orders from last 7 days)
-          const sevenDaysAgo = new Date();
+          const sevenDaysAgo = new Date(now);
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          const weeklyEarnings = completedOrders
+          const weeklyEarnings = deliveredOrders
             .filter(o => new Date(o.createdAt) > sevenDaysAgo)
             .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
             
-          setRealEarnings({ total: totalEarnings, weekly: weeklyEarnings });
+          // This month earnings
+          const thisMonthEarnings = deliveredOrders
+            .filter(o => {
+              const d = new Date(o.createdAt);
+              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            })
+            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+            
+          // Last month earnings
+          const lastMonthEarnings = deliveredOrders
+            .filter(o => {
+              const d = new Date(o.createdAt);
+              let lastMonth = now.getMonth() - 1;
+              let year = now.getFullYear();
+              if (lastMonth < 0) {
+                lastMonth = 11;
+                year -= 1;
+              }
+              return d.getMonth() === lastMonth && d.getFullYear() === year;
+            })
+            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+
+          let percentageChange = 0;
+          if (lastMonthEarnings > 0) {
+            percentageChange = ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100;
+          } else if (thisMonthEarnings > 0) {
+            percentageChange = 100;
+          }
+            
+          setRealEarnings({ 
+            total: totalEarnings, 
+            weekly: weeklyEarnings,
+            thisMonth: thisMonthEarnings,
+            lastMonth: lastMonthEarnings,
+            pending: pendingEarnings,
+            percentageChange: Math.round(percentageChange)
+          });
         }
       }
     } catch (error) {
@@ -141,7 +182,7 @@ export const FarmerProvider = ({ children }) => {
     setCurrentUser(null);
     setRealProducts([]);
     setRealOrders([]);
-    setRealEarnings({ total: 0, weekly: 0 });
+    setRealEarnings({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: 0 });
   };
 
   const addProduct = async (productData) => {
@@ -247,6 +288,10 @@ export const FarmerProvider = ({ children }) => {
       addCertification,
       totalEarnings: realEarnings.total,
       weeklyEarnings: realEarnings.weekly,
+      thisMonthEarnings: realEarnings.thisMonth,
+      lastMonthEarnings: realEarnings.lastMonth,
+      pendingEarnings: realEarnings.pending,
+      earningsPercentageChange: realEarnings.percentageChange,
     }}>
       {children}
     </FarmerContext.Provider>

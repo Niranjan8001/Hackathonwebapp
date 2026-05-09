@@ -1,12 +1,12 @@
 import React from 'react';
 import { useFarmerContext } from '../context/FarmerContext';
 import { Card } from '../components/ui/Card';
-import { Wallet, TrendingUp, Calendar } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 
 export const Earnings = () => {
-  const { totalEarnings, weeklyEarnings, orders } = useFarmerContext();
+  const { totalEarnings, weeklyEarnings, orders, earningsPercentageChange } = useFarmerContext();
   
-  const deliveredOrders = orders.filter(o => o.status === 'Delivered');
+  const deliveredOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'delivered');
 
   return (
     <div className="p-4 pb-24 space-y-6">
@@ -16,11 +16,17 @@ export const Earnings = () => {
         </div>
         <div className="relative z-10">
           <p className="text-green-100 font-medium mb-1">Total Lifetime Earnings</p>
-          <h2 className="text-4xl font-bold mb-4">₹{totalEarnings}</h2>
+          <h2 className="text-4xl font-bold mb-4">₹{totalEarnings.toLocaleString('en-IN')}</h2>
           
-          <div className="flex items-center gap-2 bg-white/20 inline-flex px-3 py-1.5 rounded-lg backdrop-blur-sm">
-            <TrendingUp className="w-4 h-4 text-green-100" />
-            <span className="text-sm font-medium text-green-50">+12% this month</span>
+          <div className={`flex items-center gap-2 inline-flex px-3 py-1.5 rounded-lg backdrop-blur-sm ${earningsPercentageChange >= 0 ? 'bg-white/20' : 'bg-red-500/20'}`}>
+            {earningsPercentageChange >= 0 ? (
+              <TrendingUp className="w-4 h-4 text-green-100" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-red-100" />
+            )}
+            <span className={`text-sm font-medium ${earningsPercentageChange >= 0 ? 'text-green-50' : 'text-red-50'}`}>
+              {earningsPercentageChange > 0 ? '+' : ''}{earningsPercentageChange}% this month
+            </span>
           </div>
         </div>
       </div>
@@ -34,7 +40,7 @@ export const Earnings = () => {
             </div>
             <div>
               <p className="text-sm text-slate-500 font-medium">Weekly Revenue</p>
-              <p className="text-xl font-bold text-slate-800">₹{weeklyEarnings}</p>
+              <p className="text-xl font-bold text-slate-800">₹{weeklyEarnings.toLocaleString('en-IN')}</p>
             </div>
           </div>
         </Card>
@@ -47,18 +53,18 @@ export const Earnings = () => {
             <p className="text-slate-500 text-center py-4">No completed transactions yet.</p>
           ) : (
             deliveredOrders.map((order) => (
-              <Card key={order.id} className="flex justify-between items-center !py-3">
+              <Card key={order._id || order.id} className="flex justify-between items-center !py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
-                    {order.customerName.charAt(0)}
+                    {(order.customerName || 'C').charAt(0)}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm">{order.productName}</p>
-                    <p className="text-xs text-slate-500">{new Date(order.date).toLocaleDateString()}</p>
+                    <p className="font-bold text-slate-800 text-sm">Order #{String(order._id || order.id).slice(-4)}</p>
+                    <p className="text-xs text-slate-500">{new Date(order.createdAt || order.date).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-green-600">+₹{order.total}</p>
+                  <p className="font-bold text-green-600">+₹{order.totalAmount || order.total}</p>
                 </div>
               </Card>
             ))

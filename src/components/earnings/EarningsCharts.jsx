@@ -6,7 +6,14 @@ const Skeleton = ({ className }) => (
 );
 
 export const EarningsCharts = () => {
-  const { realOrders = [], earningsLoading } = useFarmerContext();
+  const { 
+    realOrders = [], 
+    earningsLoading,
+    totalEarnings,
+    thisMonthEarnings,
+    lastMonthEarnings,
+    pendingEarnings 
+  } = useFarmerContext();
   const hasData = realOrders.length > 0;
 
   if (earningsLoading) {
@@ -100,11 +107,11 @@ export const EarningsCharts = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 mt-12 pt-8 border-t border-white/5">
-        <ChartStat label="This Month" value="₹18,750" color="text-green-400" />
-        <ChartStat label="Total Earnings" value="₹48,650" color="text-white" />
-        <ChartStat label="Total Withdrawn" value="₹32,400" color="text-white" />
-        <ChartStat label="Pending Amount" value="₹5,250" color="text-white" />
-        <ChartStat label="Last Month" value="₹3,280" color="text-white" />
+        <ChartStat label="This Month" value={`₹${thisMonthEarnings.toLocaleString('en-IN')}`} color="text-green-400" />
+        <ChartStat label="Total Earnings" value={`₹${totalEarnings.toLocaleString('en-IN')}`} color="text-white" />
+        <ChartStat label="Total Withdrawn" value="₹0" color="text-white" />
+        <ChartStat label="Pending Amount" value={`₹${pendingEarnings.toLocaleString('en-IN')}`} color="text-white" />
+        <ChartStat label="Last Month" value={`₹${lastMonthEarnings.toLocaleString('en-IN')}`} color="text-white" />
       </div>
     </div>
   );

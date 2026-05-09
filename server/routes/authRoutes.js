@@ -10,6 +10,6 @@ console.log('DEBUG: Auth Routes loading...');
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.get('/me', verifyToken, getMe);
-router.put('/update-profile', verifyToken, upload.single('profilePhoto'), updateProfile);
+router.put('/update-profile', verifyToken, upload.fields([{ name: 'profilePhoto', maxCount: 1 }, { name: 'bannerImage', maxCount: 1 }, { name: 'farmImages', maxCount: 5 }]), updateProfile);
 
 export default router;

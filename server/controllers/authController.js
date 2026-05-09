@@ -109,10 +109,29 @@ export const updateProfile = async (req, res, next) => {
 
     const updates = { ...req.body };
     
-    // Handle Profile Photo Upload via Cloudinary
-    if (req.file) {
-      console.log("DEBUG: Processing Profile Photo Upload:", req.file.path);
-      updates.profilePhoto = req.file.path; // Cloudinary secure_url
+    // Handle Profile Photo and Farm Images Upload via Cloudinary
+    if (req.files) {
+      if (req.files.profilePhoto) {
+        updates.profilePhoto = req.files.profilePhoto[0].path;
+      }
+      if (req.files.bannerImage) {
+        updates.bannerImage = req.files.bannerImage[0].path;
+      }
+      if (req.files.farmImages) {
+        const newImages = req.files.farmImages.map(f => f.path);
+        const existingImages = req.body.existingFarmImages 
+          ? (Array.isArray(req.body.existingFarmImages) ? req.body.existingFarmImages : [req.body.existingFarmImages])
+          : [];
+        updates.farmImages = [...existingImages, ...newImages];
+      } else if (req.body.existingFarmImages) {
+        // If no new files but existing images are sent (e.g. some removed)
+        updates.farmImages = Array.isArray(req.body.existingFarmImages) 
+          ? req.body.existingFarmImages 
+          : [req.body.existingFarmImages];
+      }
+      delete updates.existingFarmImages; // Clean up body field
+    } else if (req.file) {
+      updates.profilePhoto = req.file.path;
     }
 
     // Handle specific array pushes if needed
