@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { useFarmerContext } from '../../context/FarmerContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,6 +34,7 @@ export const LoginFlow = () => {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            maxLength={100}
             className="block w-full pl-12 pr-4 py-3 lg:py-4 bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white text-sm lg:text-base placeholder-white/20 focus:outline-none focus:border-green-500/50 transition-all backdrop-blur-md"
             required
           />
@@ -51,17 +52,32 @@ export const LoginFlow = () => {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            maxLength={32}
             className="block w-full pl-12 pr-4 py-3 lg:py-4 bg-white/[0.08] border border-white/10 rounded-xl lg:rounded-2xl text-white text-sm lg:text-base placeholder-white/20 focus:outline-none focus:border-green-500/50 transition-all backdrop-blur-md"
             required
           />
         </div>
       </div>
 
-      {error && (
-        <div className="text-red-400 text-[10px] font-bold text-center animate-pulse">
-          {error.message}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center justify-center gap-3 text-red-400">
+              <div className="p-1.5 bg-red-500/20 rounded-lg">
+                <AlertCircle className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-[11px] font-black uppercase tracking-wider">
+                {error.message === 'Invalid credentials' ? 'Incorrect Email or Password' : error.message}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.button
         whileHover={{ y: -2, boxShadow: "0 0 30px rgba(34,197,94,0.6)" }}

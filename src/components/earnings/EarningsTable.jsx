@@ -6,7 +6,7 @@ const Skeleton = ({ className }) => (
 );
 
 export const EarningsTable = () => {
-  const { realOrders = [], earningsLoading } = useFarmerContext();
+  const { realOrders = [], earningsLoading, dateRange } = useFarmerContext();
   
   if (earningsLoading) {
     return (
@@ -19,13 +19,18 @@ export const EarningsTable = () => {
     );
   }
 
-  const transactions = realOrders.map(o => ({
-    id: `#ORD${o._id?.slice(-5).toUpperCase() || 'XXXXX'}`,
-    date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-    customer: o.buyer?.name || 'Customer',
-    amount: `₹${o.totalAmount?.toLocaleString() || 0}`,
-    status: o.status === 'Pending' ? 'Pending' : (o.status === 'Cancelled' ? 'Cancelled' : 'Completed')
-  })).slice(0, 5);
+  const transactions = realOrders
+    .filter(o => {
+      const orderDate = new Date(o.createdAt);
+      return orderDate >= dateRange.startDate && orderDate <= dateRange.endDate;
+    })
+    .map(o => ({
+      id: `#ORD${o._id?.slice(-5).toUpperCase() || 'XXXXX'}`,
+      date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      customer: o.buyer?.name || 'Customer',
+      amount: `₹${o.totalAmount?.toLocaleString() || 0}`,
+      status: o.status === 'Pending' ? 'Pending' : (o.status === 'Cancelled' ? 'Cancelled' : 'Completed')
+    })).slice(0, 5);
 
   return (
     <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full shadow-2xl flex flex-col opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>

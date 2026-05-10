@@ -360,7 +360,7 @@ const TabButton = ({ icon: Icon, label, isActive, onClick }) => (
   </button>
 );
 
-const InfoField = ({ label, value, name, onChange, isEditing, type = "text", options = [], icon: Icon }) => {
+const InfoField = ({ label, value, name, onChange, isEditing, type = "text", options = [], icon: Icon, maxLength }) => {
   if (isEditing) {
     return (
       <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 space-y-2 ring-1 ring-white/5 focus-within:ring-green-500/30 focus-within:border-green-500/50 transition-all">
@@ -384,6 +384,7 @@ const InfoField = ({ label, value, name, onChange, isEditing, type = "text", opt
             value={value}
             onChange={onChange}
             placeholder={`Enter ${label}`}
+            maxLength={maxLength}
             className="bg-transparent text-sm font-bold text-white focus:outline-none w-full placeholder:text-white/10"
           />
         )}
@@ -881,9 +882,9 @@ export const ProfileView = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <InfoField label="Full Name" name="name" value={personalFormData.name} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={User} />
-                        <InfoField label="Email Address" name="email" value={personalFormData.email} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="email" icon={Mail} />
-                        <InfoField label="Phone Number" name="phone" value={personalFormData.phone} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={Phone} />
+                        <InfoField label="Full Name" name="name" value={personalFormData.name} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={User} maxLength={50} />
+                        <InfoField label="Email Address" name="email" value={personalFormData.email} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="email" icon={Mail} maxLength={100} />
+                        <InfoField label="Phone Number" name="phone" value={personalFormData.phone} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={Phone} maxLength={15} />
                         <InfoField label="Date of Birth" name="dob" value={personalFormData.dob} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="date" icon={Calendar} />
                         <InfoField label="Gender" name="gender" value={personalFormData.gender} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} icon={Users} />
                         <InfoField label="Language" name="language" value={personalFormData.language} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="select" options={['English', 'Hindi', 'Bengali', 'Marathi', 'Tamil', 'Telugu']} icon={Languages} />
@@ -909,6 +910,7 @@ export const ProfileView = () => {
                           <textarea
                             value={editedBio}
                             onChange={(e) => setEditedBio(e.target.value)}
+                            maxLength={500}
                             className="w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-white text-base focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 min-h-[180px] resize-none transition-all font-medium leading-relaxed placeholder:text-white/5"
                             placeholder="I am passionate about sustainable farming..."
                           />
@@ -1009,6 +1011,7 @@ export const ProfileView = () => {
                               value={farmFormData.farmName}
                               onChange={handleFarmFormChange}
                               placeholder="Enter farm name"
+                              maxLength={100}
                               className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
                             />
                           </div>
@@ -1028,6 +1031,7 @@ export const ProfileView = () => {
                                 value={farmFormData.farmSize}
                                 onChange={handleFarmFormChange}
                                 placeholder="Enter farm size"
+                                maxLength={10}
                                 className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
                               />
                             </div>
@@ -1082,6 +1086,7 @@ export const ProfileView = () => {
                               value={farmFormData.villageLocality}
                               onChange={handleFarmFormChange}
                               placeholder="Enter village / locality"
+                              maxLength={200}
                               className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
                             />
                           </div>
@@ -1117,6 +1122,7 @@ export const ProfileView = () => {
                               value={farmFormData.pincode}
                               onChange={handleFarmFormChange}
                               placeholder="Enter pincode"
+                              maxLength={6}
                               className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-11 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
                             />
                             {isPincodeLoading && (
@@ -1299,7 +1305,7 @@ export const ProfileView = () => {
                             onChange={handleFarmFormChange}
                             placeholder="Any additional information about your farm..."
                             rows={6}
-                            maxLength={500}
+                            maxLength={1000}
                             className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl p-4 focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10 resize-none"
                           />
                           <div className="absolute bottom-4 right-4 text-[10px] font-bold text-white/20">
@@ -1374,6 +1380,7 @@ export const ProfileView = () => {
                             value={bankFormData.accountHolderName}
                             onChange={handleBankFormChange}
                             placeholder="Enter account holder name"
+                            maxLength={100}
                             className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
                           />
                         </div>
@@ -1393,6 +1400,7 @@ export const ProfileView = () => {
                               value={bankFormData.accountNumber}
                               onChange={handleBankFormChange}
                               placeholder="Enter account number"
+                              maxLength={20}
                               className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
                             />
                           </div>
@@ -1412,6 +1420,7 @@ export const ProfileView = () => {
                                 value={bankFormData.ifscCode}
                                 onChange={handleBankFormChange}
                                 placeholder="Enter IFSC code"
+                                maxLength={11}
                                 className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium uppercase"
                               />
                             </div>

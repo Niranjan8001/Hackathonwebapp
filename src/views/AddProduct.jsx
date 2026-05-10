@@ -210,6 +210,7 @@ export const AddProduct = () => {
                         <input 
                            type="text" name="title" value={formData.title} onChange={handleChange}
                            placeholder="Enter product name"
+                           maxLength={100}
                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10"
                         />
                      </div>
@@ -237,6 +238,7 @@ export const AddProduct = () => {
                      <textarea 
                         name="description" value={formData.description} onChange={handleChange}
                         placeholder="Describe your product, quality, and freshness"
+                        maxLength={1000}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10 min-h-[120px] resize-none"
                      />
                   </div>
@@ -359,6 +361,7 @@ export const AddProduct = () => {
                      <input 
                         type="text" name="storageInstructions" value={formData.storageInstructions} onChange={handleChange}
                         placeholder="Enter storage instructions (optional)"
+                        maxLength={200}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10"
                      />
                   </div>
@@ -378,6 +381,7 @@ export const AddProduct = () => {
                            onChange={(e) => setTagInput(e.target.value)}
                            onKeyDown={handleAddTag}
                            placeholder="Add tags..."
+                           maxLength={30}
                            className="flex-1 bg-transparent border-none text-sm font-bold text-white focus:outline-none min-w-[100px] placeholder:text-white/10"
                         />
                      </div>

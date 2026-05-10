@@ -20,9 +20,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useFarmerContext } from '../context/FarmerContext';
+import { DateRangePicker } from '../components/ui/DateRangePicker';
 
 export const OrdersView = () => {
-  const { orders = [], fetchOrders } = useFarmerContext();
+  const { orders = [], fetchOrders, dateRange } = useFarmerContext();
   
   useEffect(() => {
     if (fetchOrders) fetchOrders();
@@ -62,12 +63,14 @@ export const OrdersView = () => {
 
   const filteredOrders = useMemo(() => {
     return formattedOrders.filter(order => {
+      const orderDate = new Date(order.date);
+      const matchesDate = orderDate >= dateRange.startDate && orderDate <= dateRange.endDate;
       const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            order.customer.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab = activeTab === 'All Orders' || order.status === activeTab;
-      return matchesSearch && matchesTab;
+      return matchesDate && matchesSearch && matchesTab;
     });
-  }, [searchQuery, activeTab, formattedOrders]);
+  }, [searchQuery, activeTab, formattedOrders, dateRange]);
 
   return (
     <GlassLayout>
@@ -178,11 +181,7 @@ export const OrdersView = () => {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="flex items-center gap-3"
                     >
-                      <button className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl text-xs font-bold hover:bg-white/10 transition-all text-white/60">
-                        <Calendar className="w-4 h-4 text-white/20" />
-                        <span className="hidden sm:inline">May 1 - May 29, 2025</span>
-                        <span className="sm:hidden">May 1 - 29</span>
-                      </button>
+                      <DateRangePicker />
                       <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all text-white/40 hover:text-white">
                         <Filter className="w-4 h-4" />
                       </button>

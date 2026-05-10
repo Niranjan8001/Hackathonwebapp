@@ -3,7 +3,7 @@ import { Star, Search, Filter, ChevronDown, Eye, MessageCircle, MoreVertical, Ch
 import { useFarmerContext } from '../../context/FarmerContext';
 
 export const AllReviewsTable = () => {
-  const { realReviews = [] } = useFarmerContext();
+  const { realReviews = [], dateRange } = useFarmerContext();
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
 
@@ -15,6 +15,10 @@ export const AllReviewsTable = () => {
   ];
 
   const filtered = realReviews.filter(r => {
+    const reviewDate = new Date(r.createdAt);
+    const matchesDate = reviewDate >= dateRange.startDate && reviewDate <= dateRange.endDate;
+    if (!matchesDate) return false;
+    
     if (activeTab === 'Replied') return r.status === 'replied';
     if (activeTab === 'Pending') return r.status === 'pending';
     if (activeTab === 'Negative') return r.rating <= 2;

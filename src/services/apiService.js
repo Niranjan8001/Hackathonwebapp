@@ -255,6 +255,40 @@ export const apiService = {
         'Authorization': `Bearer ${token}`
       }
     });
+  },
+
+  getSupportTickets: async (token) => {
+    return fetchWithRetry('/support/tickets', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+
+  createSupportTicket: async (ticketData, token) => {
+    return fetchWithRetry('/support/tickets', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: ticketData instanceof FormData ? ticketData : JSON.stringify(ticketData)
+    });
+  },
+  
+  getEarningsReport: async (token) => {
+    return fetchWithRetry('/earnings/report', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+
+  getWeather: async (pincode, token) => {
+    return fetchWithRetry(`/weather/${pincode}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 };
 

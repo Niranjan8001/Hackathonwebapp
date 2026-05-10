@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, Calendar, Filter, ChevronDown } from 'lucide-react';
+import { DateRangePicker } from '../ui/DateRangePicker';
 
 export const ReviewsHeader = () => {
   return (
@@ -15,10 +16,7 @@ export const ReviewsHeader = () => {
           <ChevronDown className="w-3 h-3 opacity-40" />
         </div>
 
-        <div className="flex items-center gap-6 bg-white/5 border border-white/10 text-white/40 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all min-w-[220px]">
-          <span className="text-white/60">May 1 - May 29, 2025</span>
-          <Calendar className="w-4 h-4 text-white/20 ml-auto" />
-        </div>
+        <DateRangePicker />
 
         <button className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 text-green-400 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500/20 transition-all shadow-lg shadow-green-500/5">
           <Download className="w-4 h-4" />

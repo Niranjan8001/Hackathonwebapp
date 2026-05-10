@@ -6,6 +6,7 @@ const Skeleton = ({ className }) => (
 );
 
 export const EarningsCharts = () => {
+  const [activeTab, setActiveTab] = React.useState('Monthly');
   const { 
     realOrders = [], 
     earningsLoading,
@@ -28,19 +29,48 @@ export const EarningsCharts = () => {
     );
   }
 
+  const getChartConfig = () => {
+    switch(activeTab) {
+      case 'Daily':
+        return {
+          labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
+          path: "M 50 380 L 200 360 L 350 370 L 500 320 L 650 340 L 800 280 L 950 250",
+          fillPath: "M 50 380 L 200 360 L 350 370 L 500 320 L 650 340 L 800 280 L 950 250 L 950 400 L 50 400 Z",
+          points: [{x: 50, y: 380}, {x: 200, y: 360}, {x: 350, y: 370}, {x: 500, y: 320}, {x: 650, y: 340}, {x: 800, y: 280}, {x: 950, y: 250}]
+        };
+      case 'Weekly':
+        return {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          path: "M 50 320 L 200 280 L 350 200 L 500 220 L 650 150 L 800 180 L 950 120",
+          fillPath: "M 50 320 L 200 280 L 350 200 L 500 220 L 650 150 L 800 180 L 950 120 L 950 400 L 50 400 Z",
+          points: [{x: 50, y: 320}, {x: 200, y: 280}, {x: 350, y: 200}, {x: 500, y: 220}, {x: 650, y: 150}, {x: 800, y: 180}, {x: 950, y: 120}]
+        };
+      default:
+        return {
+          labels: ["Dec '24", "Jan '25", "Feb '25", "Mar '25", "Apr '25", "May '25", "Jun '25"],
+          path: "M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180",
+          fillPath: "M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180 L 950 400 L 50 400 Z",
+          points: [{x: 50, y: 350}, {x: 200, y: 300}, {x: 350, y: 320}, {x: 500, y: 250}, {x: 650, y: 280}, {x: 800, y: 220}, {x: 950, y: 180}]
+        };
+    }
+  };
+
+  const config = getChartConfig();
+
   return (
     <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 h-full flex flex-col min-h-[450px] shadow-2xl opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
       <div className="flex items-center justify-between mb-10">
         <div>
           <h3 className="text-xl font-bold text-white">Earnings Overview</h3>
-          <p className="text-xs text-white/40 mt-1 tracking-wider uppercase font-black">Monthly performance tracking</p>
+          <p className="text-xs text-white/40 mt-1 tracking-wider uppercase font-black">{activeTab} performance tracking</p>
         </div>
         <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
           {['Daily', 'Weekly', 'Monthly'].map(tab => (
             <button 
               key={tab}
+              onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                tab === 'Monthly' ? 'bg-white/10 text-white shadow-xl' : 'text-white/20 hover:text-white/40'
+                activeTab === tab ? 'bg-white/10 text-white shadow-xl' : 'text-white/20 hover:text-white/40'
               }`}
             >
               {tab}
@@ -65,26 +95,32 @@ export const EarningsCharts = () => {
              <div className="flex-1 relative px-2 overflow-hidden">
                 <svg className="w-full h-full" viewBox="0 0 1000 400" preserveAspectRatio="none">
                   <path 
-                    d="M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180 L 950 400 L 50 400 Z" 
+                    key={`fill-${activeTab}`}
+                    d={config.fillPath} 
                     fill="url(#chartGradient)" 
-                    className="transition-all duration-1000"
+                    className="transition-all duration-700 ease-in-out"
                   />
                   <path 
-                    d="M 50 350 L 200 300 L 350 320 L 500 250 L 650 280 L 800 220 L 950 180" 
+                    key={`line-${activeTab}`}
+                    d={config.path} 
                     fill="none" 
                     stroke="#22c55e" 
                     strokeWidth="3" 
                     strokeLinecap="round" 
                     strokeLinejoin="round"
                     strokeDasharray="2000"
-                    strokeDashoffset="2000"
-                    className="animate-draw-line"
+                    strokeDashoffset="0"
+                    className="transition-all duration-700 ease-in-out"
                   />
-                  {[
-                    {x: 50, y: 350}, {x: 200, y: 300}, {x: 350, y: 320}, 
-                    {x: 500, y: 250}, {x: 650, y: 280}, {x: 800, y: 220}, {x: 950, y: 180}
-                  ].map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="6" fill="#22c55e" className="hover:r-8 transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                  {config.points.map((p, i) => (
+                    <circle 
+                      key={`${activeTab}-${i}`} 
+                      cx={p.x} 
+                      cy={p.y} 
+                      r="6" 
+                      fill="#22c55e" 
+                      className="hover:r-8 transition-all cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.5)]" 
+                    />
                   ))}
                   <defs>
                     <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -95,12 +131,9 @@ export const EarningsCharts = () => {
                 </svg>
              </div>
              <div className="flex justify-between px-2 mt-6 text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
-               <span>Dec '24</span>
-               <span>Jan '25</span>
-               <span>Feb '25</span>
-               <span>Mar '25</span>
-               <span>Apr '25</span>
-               <span>May '25</span>
+               {config.labels.map(label => (
+                 <span key={label}>{label}</span>
+               ))}
              </div>
           </div>
         )}

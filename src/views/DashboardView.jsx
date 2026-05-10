@@ -16,8 +16,10 @@ import {
 
 import { useFarmerContext } from '../context/FarmerContext';
 
+import { WeatherWidget } from '../components/dashboard/WeatherWidget';
+
 export const DashboardView = () => {
-  const { products = [], orders = [], totalEarnings = 0, earningsPercentageChange = 0 } = useFarmerContext();
+  const { products = [], orders = [], totalEarnings = 0, earningsPercentageChange } = useFarmerContext();
   
   // Calculate some derived stats
   const pendingOrders = orders.filter(o => o.status === 'Pending').length;
@@ -33,8 +35,8 @@ export const DashboardView = () => {
             icon={<Wallet />} 
             label="Earnings" 
             value={`₹${totalEarnings.toLocaleString('en-IN')}`} 
-            trend={totalEarnings > 0 ? `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%` : "0%"} 
-            trendUp={earningsPercentageChange >= 0} 
+            trend={earningsPercentageChange !== null ? `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%` : "Insufficient Data"} 
+            trendUp={earningsPercentageChange === null || earningsPercentageChange >= 0} 
           />
           <StatCard 
             icon={<Clock />} 
@@ -91,16 +93,22 @@ export const DashboardView = () => {
               <span>May 29</span>
             </div>
 
-            <div className={`mt-4 ${earningsPercentageChange >= 0 ? 'bg-green-500/5 border-green-500/10' : 'bg-red-500/5 border-red-500/10'} border rounded-xl p-2.5 flex items-center gap-3 shrink-0`}>
-              <div className={`${earningsPercentageChange >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} p-1 rounded-lg`}>
-                {earningsPercentageChange >= 0 ? (
+            <div className={`mt-4 ${earningsPercentageChange === null ? 'bg-white/5 border-white/10' : (earningsPercentageChange >= 0 ? 'bg-green-500/5 border-green-500/10' : 'bg-red-500/5 border-red-500/10')} border rounded-xl p-2.5 flex items-center gap-3 shrink-0`}>
+              <div className={`${earningsPercentageChange === null ? 'bg-white/10 text-white/40' : (earningsPercentageChange >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')} p-1 rounded-lg`}>
+                {earningsPercentageChange === null ? (
+                  <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4 opacity-50" />
+                ) : earningsPercentageChange >= 0 ? (
                   <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 ) : (
                   <TrendingDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 )}
               </div>
               <p className="text-[9px] lg:text-[10px] font-bold text-white/60">
-                Performance {earningsPercentageChange >= 0 ? 'up' : 'down'} <span className={earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400'}>{Math.abs(earningsPercentageChange)}%</span> this month.
+                {earningsPercentageChange === null ? (
+                  "Insufficient Data for performance tracking."
+                ) : (
+                  <>Performance {earningsPercentageChange >= 0 ? 'up' : 'down'} <span className={earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400'}>{Math.abs(earningsPercentageChange)}%</span> this month.</>
+                )}
               </p>
             </div>
           </div>
@@ -175,32 +183,7 @@ export const DashboardView = () => {
           </div>
 
           {/* Weather Update */}
-          <div className="xl:col-span-5 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl lg:rounded-[1.5rem] p-4 lg:p-6 shadow-xl flex flex-col min-h-[220px] lg:min-h-0">
-             <h3 className="text-xs lg:text-lg font-bold uppercase tracking-wider text-white/60 mb-4 shrink-0">Weather</h3>
-             
-             <div className="flex items-center gap-4 mb-4 shrink-0">
-               <div className="p-2 lg:p-3 bg-green-500/10 rounded-xl lg:rounded-2xl border border-green-500/10">
-                 <CloudSun className="w-6 h-6 lg:w-8 lg:h-8 text-green-400" />
-               </div>
-               <div>
-                 <p className="text-xl lg:text-2xl font-black">28°C</p>
-                 <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Partly Cloudy</p>
-               </div>
-             </div>
-
-             <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 shrink-0">
-               <WeatherDetail icon={<Droplets className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-green-400/40" />} label="Humidity" value="65%" />
-               <WeatherDetail icon={<Wind className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-green-400/40" />} label="Wind" value="12 km/h" />
-             </div>
-
-             <div className="flex justify-between items-end gap-1 flex-1 min-h-0">
-               <ForecastDay day="Tue" icon={<CloudSun className="w-3.5 h-3.5 text-green-400" />} temp="28/18" active={true} />
-               <ForecastDay day="Wed" icon={<CloudSun className="w-3.5 h-3.5 text-white/20" />} temp="30/19" />
-               <ForecastDay day="Thu" icon={<CloudRain className="w-3.5 h-3.5 text-white/20" />} temp="31/20" />
-               <ForecastDay day="Fri" icon={<CloudSun className="w-3.5 h-3.5 text-white/20" />} temp="29/18" />
-               <ForecastDay day="Sat" icon={<CloudRain className="w-3.5 h-3.5 text-white/20" />} temp="27/17" />
-             </div>
-          </div>
+          <WeatherWidget />
         </div>
 
       </div>

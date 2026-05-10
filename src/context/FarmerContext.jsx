@@ -17,11 +17,18 @@ export const FarmerProvider = ({ children }) => {
   const [realProducts, setRealProducts] = useState([]);
   const [realOrders, setRealOrders] = useState([]);
   const [realReviews, setRealReviews] = useState([]);
-  const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: 0 });
+  const [realEarnings, setRealEarnings] = useState({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: null });
   const [earningsLoading, setEarningsLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Date Range State
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    endDate: new Date(),
+    label: 'This Month'
+  });
 
   const toggleTheme = () => setIsDark(!isDark);
 
@@ -92,11 +99,9 @@ export const FarmerProvider = ({ children }) => {
             })
             .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
 
-          let percentageChange = 0;
+          let percentageChange = null;
           if (lastMonthEarnings > 0) {
-            percentageChange = ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100;
-          } else if (thisMonthEarnings > 0) {
-            percentageChange = 100;
+            percentageChange = Math.round(((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100);
           }
             
           setRealEarnings({ 
@@ -105,7 +110,7 @@ export const FarmerProvider = ({ children }) => {
             thisMonth: thisMonthEarnings,
             lastMonth: lastMonthEarnings,
             pending: pendingEarnings,
-            percentageChange: Math.round(percentageChange)
+            percentageChange: percentageChange
           });
         }
       }
@@ -182,7 +187,7 @@ export const FarmerProvider = ({ children }) => {
     setCurrentUser(null);
     setRealProducts([]);
     setRealOrders([]);
-    setRealEarnings({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: 0 });
+    setRealEarnings({ total: 0, weekly: 0, thisMonth: 0, lastMonth: 0, pending: 0, percentageChange: null });
   };
 
   const addProduct = async (productData) => {
@@ -292,6 +297,8 @@ export const FarmerProvider = ({ children }) => {
       lastMonthEarnings: realEarnings.lastMonth,
       pendingEarnings: realEarnings.pending,
       earningsPercentageChange: realEarnings.percentageChange,
+      dateRange,
+      setDateRange,
     }}>
       {children}
     </FarmerContext.Provider>

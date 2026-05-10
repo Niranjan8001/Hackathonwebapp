@@ -43,9 +43,27 @@ export const ReviewsStats = () => {
   const pendingReviews = realReviews.filter(r => r.status === 'pending').length;
   const responseRate = totalReviews > 0 ? ((totalReviews - pendingReviews) / totalReviews * 100).toFixed(0) : 0;
 
+  const now = new Date();
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const thisMonthReviewsCount = realReviews.filter(r => new Date(r.createdAt) >= thisMonthStart).length;
+  const lastMonthReviewsCount = realReviews.filter(r => {
+    const d = new Date(r.createdAt);
+    return d >= lastMonthStart && d < thisMonthStart;
+  }).length;
+
+  let reviewTrend = null;
+  if (lastMonthReviewsCount > 0) {
+    const change = ((thisMonthReviewsCount - lastMonthReviewsCount) / lastMonthReviewsCount * 100);
+    reviewTrend = `${change >= 0 ? '+' : ''}${change.toFixed(1)}% from last month`;
+  } else {
+    reviewTrend = 'Insufficient Data';
+  }
+
   const stats = [
     { label: 'Average Rating', value: avgRating, decimals: 1, icon: <Star className="text-yellow-400" />, sub: `Based on ${totalReviews} reviews`, color: 'text-yellow-400' },
-    { label: 'Total Reviews', value: totalReviews, icon: <MessageSquare className="text-green-400" />, trend: '+18.6% from last month', color: 'text-green-400' },
+    { label: 'Total Reviews', value: totalReviews, icon: <MessageSquare className="text-green-400" />, trend: reviewTrend, color: 'text-green-400' },
     { label: 'Positive Reviews', value: positiveReviews, icon: <Smile className="text-green-400" />, sub: `${totalReviews > 0 ? (positiveReviews/totalReviews*100).toFixed(1) : 0}% of total reviews`, color: 'text-green-400' },
     { label: 'Response Rate', value: responseRate, suffix: "%", icon: <RotateCcw className="text-blue-400" />, sub: 'Usually responds in 2h', color: 'text-blue-400' },
     { label: 'Pending Reviews', value: pendingReviews, icon: <Clock className="text-amber-400" />, sub: 'Awaiting your response', color: 'text-amber-400' }

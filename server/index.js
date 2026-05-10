@@ -13,6 +13,9 @@ import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import supportRoutes from "./routes/supportRoutes.js";
+import earningsRoutes from "./routes/earningsRoutes.js";
+import weatherRoutes from "./routes/weatherRoutes.js";
 
 
 // Connect to Database
@@ -47,6 +50,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/earnings", earningsRoutes);
+app.use("/api/weather", weatherRoutes);
 
 
 // Error Handling Middlewares

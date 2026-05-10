@@ -61,7 +61,7 @@ export const EarningsStatCards = () => {
     { label: 'Total Earnings', value: total, icon: <Wallet />, trend: total > 0 ? 'Lifetime' : 'No Data', color: 'text-green-400' },
     { label: 'Pending Amount', value: pendingAmount, icon: <Clock />, trend: `${pendingOrders.length} orders`, color: 'text-amber-400' },
     { label: 'Withdrawn Amount', value: 0, icon: <Landmark />, trend: '0 withdrawals', color: 'text-white/20' },
-    { label: 'This Month', value: thisMonthEarnings || 0, icon: <TrendingUp />, trend: `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%`, color: earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400' }
+    { label: 'This Month', value: thisMonthEarnings || 0, icon: <TrendingUp />, trend: earningsPercentageChange !== null ? `${earningsPercentageChange > 0 ? '+' : ''}${earningsPercentageChange}%` : 'Insufficient Data', color: earningsPercentageChange === null ? 'text-white/20' : (earningsPercentageChange >= 0 ? 'text-green-400' : 'text-red-400') }
   ];
 
   return (

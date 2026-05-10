@@ -63,15 +63,7 @@ export const GlassLayout = ({ children }) => {
                 <Menu className="w-5 h-5" />
               </button>
               
-              {/* Search Bar - Mockup Style */}
-              <div className="relative group hidden lg:block">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-green-400 transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Search anything..." 
-                  className="bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-6 text-xs font-medium w-80 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
-                />
-              </div>
+              <div className="flex-1" />
             </div>
 
             <div className="flex items-center gap-6">
@@ -190,7 +182,10 @@ const GlassSidebar = ({ isMobile, onClose }) => {
       {/* Bottom Actions */}
       <div className="p-6 mt-auto space-y-4">
         {/* Help Card */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-5 relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-all">
+        <div 
+          onClick={() => handleNav('/need-help')}
+          className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-5 relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-all"
+        >
           <div className="relative z-10">
             <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center text-green-400 mb-3">
                <Headphones className="w-5 h-5" />
