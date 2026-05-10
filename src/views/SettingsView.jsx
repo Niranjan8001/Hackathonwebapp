@@ -153,8 +153,8 @@ export const SettingsView = () => {
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [passStrength, setPassStrength] = useState(0);
 
-  // State for Phone Change
-  const [phoneData, setPhoneData] = useState({ current: currentUser?.phone || '', new: '', otp: '' });
+  // State for Email Change
+  const [emailData, setEmailData] = useState({ current: currentUser?.email || '', new: '', otp: '' });
   const [showOtp, setShowOtp] = useState(false);
 
   // State for Toggles
@@ -182,7 +182,8 @@ export const SettingsView = () => {
   };
 
   const handleRequestOtp = () => {
-    if (phoneData.new.length >= 10) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(emailData.new)) {
       setShowOtp(true);
     }
   };
@@ -221,34 +222,33 @@ export const SettingsView = () => {
           <SettingsSection icon={User} title="Account Settings" subtitle="Personal Identification & Access">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
               
-              {/* Phone Change */}
+              {/* Email Change */}
               <div className="space-y-8">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-1 h-4 bg-green-500/40 rounded-full" />
-                  <h4 className="text-xs font-black text-white/60 uppercase tracking-widest">Phone Verification</h4>
+                  <h4 className="text-xs font-black text-white/60 uppercase tracking-widest">Email Verification</h4>
                 </div>
                 
                 <div className="space-y-6">
                   <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/[0.05] transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400">
-                        <PhoneIcon className="w-5 h-5" />
+                        <Mail className="w-5 h-5" />
                       </div>
                       <div className="space-y-0.5">
-                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Current Number</p>
-                        <p className="text-sm font-black text-white">{currentUser?.phone || '+91 8109618368'}</p>
+                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Current Email</p>
+                        <p className="text-sm font-black text-white">{currentUser?.email || 'farmer@example.com'}</p>
                       </div>
                     </div>
                     <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-lg text-[9px] font-black text-green-400 uppercase tracking-widest">Verified</div>
                   </div>
 
                   <PremiumInput 
-                    label="New Phone Number" 
-                    icon={SmartphoneNfc} 
-                    placeholder="Enter new phone number"
-                    value={phoneData.new}
-                    maxLength={15}
-                    onChange={(e) => setPhoneData({...phoneData, new: e.target.value})}
+                    label="New Email Address" 
+                    icon={Mail} 
+                    placeholder="Enter your new email"
+                    value={emailData.new}
+                    onChange={(e) => setEmailData({...emailData, new: e.target.value})}
                     rightElement={
                       <button 
                         onClick={handleRequestOtp}
@@ -271,9 +271,9 @@ export const SettingsView = () => {
                           label="Verification Code (OTP)" 
                           icon={Lock} 
                           placeholder="Enter 6-digit code"
-                          value={phoneData.otp}
+                          value={emailData.otp}
                           maxLength={6}
-                          onChange={(e) => setPhoneData({...phoneData, otp: e.target.value})}
+                          onChange={(e) => setEmailData({...emailData, otp: e.target.value})}
                           rightElement={
                             <div className="flex items-center gap-3 pr-2">
                               <span className="text-[10px] font-bold text-white/20">01:59</span>
@@ -282,7 +282,7 @@ export const SettingsView = () => {
                           }
                         />
                         <button className="w-full mt-4 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white transition-all">
-                          Verify & Update Number
+                          Verify & Update Email
                         </button>
                       </motion.div>
                     )}
