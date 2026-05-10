@@ -22,16 +22,14 @@ const getBaseUrl = () => {
 
   // Priority 2: Auto-detect environment
   if (isProd) {
-    console.error('[API Service] CRITICAL: VITE_API_URL is missing in production! Falling back to backup URL.');
-    // In a real scenario, this fallback should be your actual production API URL
-    const fallback = 'https://farmdirect-backend.onrender.com/api'; 
-    console.log(`[API Service] Fallback URL: ${fallback}`);
-    return fallback;
+    const productionUrl = 'https://hackathonwebapp.onrender.com/api';
+    console.log(`[API Service] Production mode detected. Using URL: ${productionUrl}`);
+    return productionUrl;
   }
 
   // Priority 3: Local development fallback
-  console.log('[API Service] No VITE_API_URL found. Falling back to localhost.');
-  return 'http://localhost:5000/api';
+  console.warn('[API Service] No VITE_API_URL found. Falling back to production backend for stability.');
+  return 'https://hackathonwebapp.onrender.com/api';
 };
 
 const API_BASE_URL = getBaseUrl();
