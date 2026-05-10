@@ -27,7 +27,7 @@ export const RegistrationFlow = () => {
     locationText: '',
     scale: 'Small Scale',
     crops: [],
-    organic: false,
+
   });
 
   const steps = [
@@ -160,12 +160,7 @@ export const RegistrationFlow = () => {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
-                <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Organic Certified</span>
-                <button onClick={() => setFormData(f => ({ ...f, organic: !f.organic }))} className={`w-10 h-5 rounded-full transition-all duration-300 relative ${formData.organic ? 'bg-white' : 'bg-white/10'}`}>
-                  <motion.div animate={{ x: formData.organic ? 22 : 4 }} className={`absolute top-1 w-3 h-3 rounded-full ${formData.organic ? 'bg-black' : 'bg-white/40'}`} />
-                </button>
-              </div>
+
             </motion.div>
           )}
         </AnimatePresence>

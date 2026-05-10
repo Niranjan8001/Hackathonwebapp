@@ -18,7 +18,7 @@ import {
   HelpCircle,
   Clock,
   Sparkles,
-  Leaf
+
 } from 'lucide-react';
 import { useFarmerContext } from '../context/FarmerContext';
 import { GlassLayout } from '../components/layout/GlassLayout';
@@ -30,7 +30,7 @@ const FALLBACK_CATEGORIES = [
   { _id: 'f3', name: 'Grains and Pulses' },
   { _id: 'f4', name: 'Commercial crops' },
   { _id: 'f5', name: 'Dairy' },
-  { _id: 'f6', name: 'Organic' },
+
   { _id: 'f7', name: 'Spices' }
 ];
 

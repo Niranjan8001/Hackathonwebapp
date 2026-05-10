@@ -13,7 +13,7 @@ import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import digilockerRoutes from "./routes/digilocker.routes.js";
+
 
 // Connect to Database
 connectDB();
@@ -47,7 +47,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/digilocker", digilockerRoutes);
+
 
 // Error Handling Middlewares
 app.use(notFound);

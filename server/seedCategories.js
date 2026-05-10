@@ -17,7 +17,7 @@ const seedCategories = async () => {
       { name: 'Grains and Pulses' },
       { name: 'Commercial crops' },
       { name: 'Dairy' },
-      { name: 'Organic' },
+
       { name: 'Spices' }
     ];
 

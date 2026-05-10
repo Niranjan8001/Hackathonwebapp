@@ -108,11 +108,9 @@ const userSchema = new mongoose.Schema({
     type: [String],
   },
 
-  organic: {
-    type: Boolean,
-  },
 
   // existing
+
   isDemoUser: {
     type: Boolean,
     default: false,
@@ -163,8 +161,8 @@ const userSchema = new mongoose.Schema({
     verifiedAt: Date,
     verificationStatus: { 
       type: String, 
-      enum: ['none', 'pending', 'verified', 'failed'], 
-      default: 'none' 
+      enum: ['Not Eligible', 'Ready for Verification', 'Verification Requested', 'Verified'], 
+      default: 'Not Eligible' 
     },
     oauthState: String,
     codeVerifier: String

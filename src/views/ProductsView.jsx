@@ -13,7 +13,7 @@ import {
   Boxes,
   Eye,
   TrendingUp,
-  Leaf
+
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -228,9 +228,9 @@ const ProductRow = ({ product }) => {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-bold">{product.name}</span>
-              <Leaf className="w-3 h-3 text-green-400" />
+
             </div>
-            <p className="text-[10px] text-white/40 font-medium max-w-[200px] truncate">Premium quality organic products from our farm.</p>
+            <p className="text-[10px] text-white/40 font-medium max-w-[200px] truncate">High quality farm-fresh products.</p>
           </div>
         </div>
       </td>

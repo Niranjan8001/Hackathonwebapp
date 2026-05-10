@@ -37,6 +37,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useFarmerContext } from '../context/FarmerContext';
 import { GlassLayout } from '../components/layout/GlassLayout';
+import { apiService } from '../services/apiService';
+
 
 // --- Components ---
 
@@ -160,42 +162,63 @@ const SearchableMultiSelect = ({ label, options, selectedValues = [], onToggle, 
   );
 };
 
-const CircularProgress = ({ percentage }) => {
-  const radius = 35;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+const CircularProgress = ({ percentage, size = 100, strokeWidth = 8, color = "#22c55e" }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="relative w-24 h-24 flex items-center justify-center">
-      <svg className="w-full h-full transform -rotate-90">
+    <div className="relative flex items-center justify-center select-none" style={{ width: size, height: size }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="transform -rotate-90"
+      >
+        {/* Background Circle */}
         <circle
-          cx="48"
-          cy="48"
+          cx={size / 2}
+          cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.05)"
-          strokeWidth="6"
+          stroke="rgba(255,255,255,0.03)"
+          strokeWidth={strokeWidth}
           fill="transparent"
+          className="transition-all duration-500"
         />
+        {/* Progress Circle */}
         <circle
-          cx="48"
-          cy="48"
+          cx={size / 2}
+          cy={size / 2}
           r={radius}
-          stroke="#22c55e"
-          strokeWidth="6"
+          stroke={color}
+          strokeWidth={strokeWidth}
           fill="transparent"
           strokeDasharray={circumference}
-          style={{ strokeDashoffset }}
+          style={{ 
+            strokeDashoffset: offset,
+            filter: `drop-shadow(0 0 10px ${color}60)` 
+          }}
           strokeLinecap="round"
-          className="transition-all duration-1000 ease-out"
+          className="transition-all duration-1000 ease-in-out"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-white">{percentage}%</span>
-        <span className="text-[8px] text-white/40 uppercase font-bold">Complete</span>
+      
+      {/* Text Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <div className="flex items-baseline justify-center gap-0.5">
+           <span className="text-3xl font-black text-white tracking-tighter leading-none">
+            {Math.round(percentage)}
+          </span>
+          <span className="text-[10px] font-black text-white/30 uppercase tracking-tighter leading-none">%</span>
+        </div>
+        <span className="text-[7px] text-white/20 font-black uppercase tracking-[0.25em] leading-none mt-2">
+          Complete
+        </span>
       </div>
     </div>
   );
 };
+
 
 const ProfileSummaryCard = ({ user }) => {
   const navigate = useNavigate();
@@ -210,20 +233,15 @@ const ProfileSummaryCard = ({ user }) => {
   };
 
   // 📈 Real-time Progress Calculation
-  const checkPersonal = !!(user?.name && user?.email && user?.phone && user?.dob);
-  const checkFarm = !!(user?.farmName && (user?.primaryCrops?.length > 0) && user?.villageLocality);
-  const checkVerification = !!(user?.isVerified || user?.certifications?.length > 0);
-  const checkBank = !!(user?.bankName && user?.accountNumber);
-
   const steps = [
-    { label: 'Personal Info', completed: checkPersonal },
-    { label: 'Farm Details', completed: checkFarm },
-    { label: 'Verification', completed: checkVerification },
-    { label: 'Bank Details', completed: checkBank },
+    { label: 'Personal Info', completed: !!(user?.name && user?.email && user?.phone && user?.dob) },
+    { label: 'Farm Details', completed: !!(user?.farmName && (user?.primaryCrops?.length > 0) && user?.villageLocality) },
+    { label: 'Uploaded Docs', completed: !!(user?.farmImages?.length > 0) },
+    { label: 'Bank Details', completed: !!(user?.bankName && user?.accountNumber) },
   ];
 
-  const completedCount = steps.filter(s => s.completed).length;
-  const percentage = Math.round((completedCount / steps.length) * 100);
+  const percentage = user?.profileCompletion || 0;
+
 
   // Motivational Messages
   const getMotivation = () => {
@@ -267,8 +285,9 @@ const ProfileSummaryCard = ({ user }) => {
 
           <div className={`px-4 py-1.5 rounded-full border flex items-center gap-2 transition-all duration-500 ${user?.isVerified ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-white/5 border-white/10 text-white/20'}`}>
             <ShieldCheck className={`w-3.5 h-3.5 ${user?.isVerified ? 'text-green-400' : 'text-white/10'}`} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{user?.isVerified ? 'Verified' : 'Unverified'}</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{user?.verification?.verificationStatus || (user?.isVerified ? 'Verified' : 'Unverified')}</span>
           </div>
+
         </div>
 
         {/* Middle: Identity & Motivation */}
@@ -290,14 +309,18 @@ const ProfileSummaryCard = ({ user }) => {
         </div>
 
         {/* Right: Progress & Stats Combined */}
-        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-10 lg:gap-12 lg:pl-10 lg:border-l lg:border-white/10">
-          <div className="flex flex-col items-center gap-4 group/strength">
-            <div className="relative transition-transform duration-500 group-hover/strength:scale-110">
-              <div className="absolute inset-0 bg-green-500/15 blur-xl rounded-full opacity-0 group-hover/strength:opacity-100 transition-opacity" />
-              <CircularProgress percentage={percentage} />
+        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-10 lg:gap-14 lg:pl-12 lg:border-l lg:border-white/10">
+          <div className="flex flex-col items-center gap-7 group/strength">
+            <div className="relative transition-all duration-700 group-hover/strength:scale-105">
+              {/* Soft Background Glow */}
+              <div className="absolute inset-0 bg-green-500/10 blur-3xl rounded-full opacity-0 group-hover/strength:opacity-100 transition-opacity duration-1000" />
+              <CircularProgress percentage={percentage} size={120} strokeWidth={10} />
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">Strength</p>
+            <div className="space-y-1 text-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20 group-hover/strength:text-white/40 transition-colors">Strength</p>
+            </div>
           </div>
+
 
           <div className="grid grid-cols-1 gap-3.5 min-w-[200px]">
             {steps.map((step) => (
@@ -457,34 +480,37 @@ export const ProfileView = () => {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editedBio, setEditedBio] = useState('');
 
-  // DigiLocker State
-  const [digilockerLoading, setDigilockerLoading] = useState(false);
+  // Verification Request Logic
+  const [verificationLoading, setVerificationLoading] = useState(false);
 
-  const handleDigiLockerAuth = async () => {
+  const handleRequestVerification = async () => {
     try {
-      setDigilockerLoading(true);
+      setVerificationLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
         alert('Your session has expired. Please log in again.');
         return;
       }
 
-      const response = await apiService.initiateDigiLockerAuth(token);
+      const response = await apiService.requestVerification(token);
 
-      if (response.success && response.data.url) {
-        // Securely redirect to DigiLocker authorization page
-        console.log('DEBUG: Redirecting to DigiLocker:', response.data.url);
-        window.location.href = response.data.url;
+      if (response.success) {
+        alert('Verification request submitted successfully!');
+        // Update user state via context if possible, or just refresh/local update
+        if (currentUser) {
+          currentUser.verification.verificationStatus = 'Verification Requested';
+        }
       } else {
-        throw new Error(response.message || 'Failed to initiate DigiLocker verification');
+        throw new Error(response.message || 'Failed to submit verification request');
       }
     } catch (err) {
-      console.error('DigiLocker Initiation Error:', err);
-      alert(err.message || 'Failed to connect to DigiLocker. Please try again later.');
+      console.error('Verification Request Error:', err);
+      alert(err.message || 'Failed to request verification. Please try again later.');
     } finally {
-      setDigilockerLoading(false);
+      setVerificationLoading(false);
     }
   };
+
 
   // Bank Form State
   const [bankFormData, setBankFormData] = useState({
@@ -785,10 +811,11 @@ export const ProfileView = () => {
 
   const tabs = [
     { label: 'Personal Information', icon: User },
-    { label: 'Farm Details', icon: ShieldCheck },
-    { label: 'Verification', icon: ShieldCheck },
+    { label: 'Farm Details', icon: Sprout },
     { label: 'Bank Details', icon: Building2 },
+    { label: 'Verification', icon: ShieldCheck },
   ];
+
 
   return (
     <GlassLayout>
@@ -937,287 +964,6 @@ export const ProfileView = () => {
                         <ShieldCheck className="w-40 h-40" />
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'Verification' && (
-                <motion.div
-                  key="verification"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-12"
-                >
-                  <div className="flex flex-col lg:flex-row items-start gap-12">
-                    <div className="flex-1 space-y-8">
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-black text-white tracking-tight">Identity Verification</h3>
-                        <p className="text-xs text-white/20 font-bold uppercase tracking-widest">Connect your official government documents via DigiLocker</p>
-                      </div>
-
-                      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 space-y-8 relative overflow-hidden group">
-                        {/* Background Decoration */}
-                        <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-600/10 rounded-full blur-[100px] group-hover:bg-purple-600/20 transition-all duration-700" />
-
-                        <div className="relative z-10 space-y-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
-                              <ShieldCheck className="w-8 h-8 text-purple-400" />
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-black text-white">Official Verification</h4>
-                              <p className="text-sm text-white/40 font-medium italic">Powered by MeriPehchaan DigiLocker</p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <p className="text-sm text-white/60 leading-relaxed max-w-xl">
-                              Get the <span className="text-green-400 font-bold">Verified Farmer</span> badge by linking your DigiLocker account. This builds trust with buyers and unlocks premium features on the platform.
-                            </p>
-
-                            <ul className="space-y-3">
-                              {[
-                                'Secure government-grade encryption',
-                                'Instant identity validation',
-                                'Verified Farmer badge on profile',
-                                'Priority placement in search results'
-                              ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/30">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {/* DigiLocker Button */}
-                          <button
-                            onClick={handleDigiLockerAuth}
-                            disabled={digilockerLoading}
-                            className={`
-                              relative group/btn w-full lg:w-auto px-10 py-5 rounded-2xl
-                              bg-gradient-to-r from-purple-600 to-indigo-600
-                              hover:from-purple-500 hover:to-indigo-500
-                              transition-all duration-300 transform active:scale-[0.98]
-                              shadow-[0_10px_30px_rgba(147,51,234,0.3)]
-                              hover:shadow-[0_15px_40px_rgba(147,51,234,0.5)]
-                              disabled:opacity-50 disabled:cursor-not-allowed
-                              flex items-center justify-center gap-4
-                            `}
-                          >
-                            {/* Neon Glow Effect */}
-                            <div className="absolute inset-0 rounded-2xl bg-purple-500/20 blur-xl opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-
-                            {digilockerLoading ? (
-                              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                <img
-                                  src="https://upload.wikimedia.org/wikipedia/en/1/1e/DigiLocker_logo.png"
-                                  alt="DigiLocker"
-                                  className="w-8 h-8 object-contain brightness-0 invert"
-                                />
-                                <span className="text-xs font-black uppercase tracking-[0.2em] text-white">
-                                  Verify with Digi Locker
-                                </span>
-                                <ArrowRight className="w-4 h-4 text-white/50 group-hover/btn:translate-x-1 transition-transform" />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'Bank Details' && (
-                <motion.div
-                  key="bank"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-8 max-w-3xl mx-auto"
-                >
-                  <div className="flex flex-col items-center text-center space-y-4 mb-8">
-                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/20 mb-2">
-                      <Building2 className="w-8 h-8 text-green-400" />
-                    </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">Bank Details</h2>
-                    <p className="text-sm text-white/60 font-medium">
-                      Please provide your bank account information.<br />
-                      This will be used for secure transactions and payouts.
-                    </p>
-                  </div>
-
-                  <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 lg:p-8 shadow-2xl">
-                    <form onSubmit={handleSaveBankDetails} className="space-y-6">
-
-                      {/* Account Holder Name */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-white/80">Account Holder Name</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <User className="w-4 h-4 text-green-400" />
-                          </div>
-                          <input
-                            type="text"
-                            name="accountHolderName"
-                            value={bankFormData.accountHolderName}
-                            onChange={handleBankFormChange}
-                            placeholder="Enter account holder name"
-                            className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Bank Account Number */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-white/80">Bank Account Number</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                              <CreditCard className="w-4 h-4 text-green-400" />
-                            </div>
-                            <input
-                              type="password"
-                              name="accountNumber"
-                              value={bankFormData.accountNumber}
-                              onChange={handleBankFormChange}
-                              placeholder="Enter account number"
-                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
-                            />
-                          </div>
-                        </div>
-
-                        {/* IFSC Code */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-white/80">IFSC Code</label>
-                          <div className="flex gap-3">
-                            <div className="relative flex-1">
-                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <ShieldCheck className="w-4 h-4 text-green-400" />
-                              </div>
-                              <input
-                                type="text"
-                                name="ifscCode"
-                                value={bankFormData.ifscCode}
-                                onChange={handleBankFormChange}
-                                placeholder="Enter IFSC code"
-                                className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium uppercase"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleVerifyIFSC}
-                              disabled={ifscLoading}
-                              className="px-5 py-3 bg-transparent border border-green-500 text-green-400 text-sm font-bold rounded-lg hover:bg-green-500/10 transition-colors focus:outline-none disabled:opacity-50 flex items-center justify-center min-w-[80px]"
-                            >
-                              {ifscLoading ? <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> : 'Verify'}
-                            </button>
-                          </div>
-                          <p className="text-[10px] text-white/40 mt-1">Enter IFSC code to auto-fetch branch name</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Bank Name */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-white/80">Bank Name</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                              <Building2 className="w-4 h-4 text-green-400" />
-                            </div>
-                            <select
-                              name="bankName"
-                              value={bankFormData.bankName}
-                              onChange={handleBankFormChange}
-                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors appearance-none cursor-pointer font-medium [&>option]:bg-[#111827]"
-                            >
-                              <option value="" disabled>Select bank name</option>
-                              <option value="State Bank of India">State Bank of India</option>
-                              <option value="HDFC Bank">HDFC Bank</option>
-                              <option value="ICICI Bank">ICICI Bank</option>
-                              <option value="Punjab National Bank">Punjab National Bank</option>
-                              <option value="Axis Bank">Axis Bank</option>
-                            </select>
-                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                              <ChevronRight className="w-4 h-4 text-white/40 rotate-90" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Account Type */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-white/80">Account Type</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                              <List className="w-4 h-4 text-green-400" />
-                            </div>
-                            <select
-                              name="accountType"
-                              value={bankFormData.accountType}
-                              onChange={handleBankFormChange}
-                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors appearance-none cursor-pointer font-medium [&>option]:bg-[#111827]"
-                            >
-                              <option value="" disabled>Select account type</option>
-                              <option value="Savings">Savings Account</option>
-                              <option value="Current">Current Account</option>
-                            </select>
-                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                              <ChevronRight className="w-4 h-4 text-white/40 rotate-90" />
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-white/40 mt-1">Savings / Current</p>
-                        </div>
-                      </div>
-
-                      {/* Branch Name */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-white/80">Branch Name</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <MapPin className="w-4 h-4 text-green-400" />
-                          </div>
-                          <input
-                            type="text"
-                            name="branchName"
-                            value={bankFormData.branchName}
-                            readOnly
-                            placeholder="Branch name will appear here"
-                            className="w-full bg-white/5 border border-white/10 text-white/60 text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none placeholder:text-white/20 font-medium cursor-not-allowed"
-                          />
-                        </div>
-                        <p className="text-[10px] text-white/40 mt-1">Auto-fetched based on IFSC code</p>
-                      </div>
-
-                      {bankError && (
-                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                          <p className="text-red-400 text-xs font-bold">{bankError}</p>
-                        </div>
-                      )}
-
-                      {/* Save Button */}
-                      <div className="pt-4 flex justify-center">
-                        <button
-                          type="submit"
-                          disabled={isSavingBank}
-                          className="bg-[#10B981] hover:bg-[#059669] text-white text-sm font-bold py-3 px-8 rounded-lg flex items-center gap-2 transition-colors focus:outline-none shadow-lg shadow-green-500/20 disabled:opacity-50"
-                        >
-                          {isSavingBank ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Save Bank Details</>}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-
-                  {/* Footer Note */}
-                  <div className="flex items-center justify-center gap-3 text-center mt-6">
-                    <ShieldCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <p className="text-[11px] text-white/60 font-medium">
-                      Your bank information is secure and encrypted.<br className="hidden sm:block" />
-                      We do not share your details with any third party.
-                    </p>
                   </div>
                 </motion.div>
               )}
@@ -1590,6 +1336,310 @@ export const ProfileView = () => {
                       </div>
                     </div>
                   </form>
+                </motion.div>
+              )}
+
+              {activeTab === 'Bank Details' && (
+                <motion.div
+                  key="bank"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8 max-w-3xl mx-auto"
+                >
+                  <div className="flex flex-col items-center text-center space-y-4 mb-8">
+                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/20 mb-2">
+                      <Building2 className="w-8 h-8 text-green-400" />
+                    </div>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">Bank Details</h2>
+                    <p className="text-sm text-white/60 font-medium">
+                      Please provide your bank account information.<br />
+                      This will be used for secure transactions and payouts.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 lg:p-8 shadow-2xl">
+                    <form onSubmit={handleSaveBankDetails} className="space-y-6">
+
+                      {/* Account Holder Name */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-white/80">Account Holder Name</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <User className="w-4 h-4 text-green-400" />
+                          </div>
+                          <input
+                            type="text"
+                            name="accountHolderName"
+                            value={bankFormData.accountHolderName}
+                            onChange={handleBankFormChange}
+                            placeholder="Enter account holder name"
+                            className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Bank Account Number */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-white/80">Bank Account Number</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <CreditCard className="w-4 h-4 text-green-400" />
+                            </div>
+                            <input
+                              type="password"
+                              name="accountNumber"
+                              value={bankFormData.accountNumber}
+                              onChange={handleBankFormChange}
+                              placeholder="Enter account number"
+                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* IFSC Code */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-white/80">IFSC Code</label>
+                          <div className="flex gap-3">
+                            <div className="relative flex-1">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <ShieldCheck className="w-4 h-4 text-green-400" />
+                              </div>
+                              <input
+                                type="text"
+                                name="ifscCode"
+                                value={bankFormData.ifscCode}
+                                onChange={handleBankFormChange}
+                                placeholder="Enter IFSC code"
+                                className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors placeholder:text-white/20 font-medium uppercase"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleVerifyIFSC}
+                              disabled={ifscLoading}
+                              className="px-5 py-3 bg-transparent border border-green-500 text-green-400 text-sm font-bold rounded-lg hover:bg-green-500/10 transition-colors focus:outline-none disabled:opacity-50 flex items-center justify-center min-w-[80px]"
+                            >
+                              {ifscLoading ? <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> : 'Verify'}
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-white/40 mt-1">Enter IFSC code to auto-fetch branch name</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Bank Name */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-white/80">Bank Name</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <Building2 className="w-4 h-4 text-green-400" />
+                            </div>
+                            <select
+                              name="bankName"
+                              value={bankFormData.bankName}
+                              onChange={handleBankFormChange}
+                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all appearance-none cursor-pointer font-medium [&>option]:bg-[#111827]"
+                            >
+                              <option value="" disabled>Select bank name</option>
+                              <option value="State Bank of India">State Bank of India</option>
+                              <option value="HDFC Bank">HDFC Bank</option>
+                              <option value="ICICI Bank">ICICI Bank</option>
+                              <option value="Punjab National Bank">Punjab National Bank</option>
+                              <option value="Axis Bank">Axis Bank</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                              <ChevronRight className="w-4 h-4 text-white/40 rotate-90" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Account Type */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-white/80">Account Type</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <List className="w-4 h-4 text-green-400" />
+                            </div>
+                            <select
+                              name="accountType"
+                              value={bankFormData.accountType}
+                              onChange={handleBankFormChange}
+                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all appearance-none cursor-pointer font-medium [&>option]:bg-[#111827]"
+                            >
+                              <option value="" disabled>Select account type</option>
+                              <option value="Savings">Savings Account</option>
+                              <option value="Current">Current Account</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                              <ChevronRight className="w-4 h-4 text-white/40 rotate-90" />
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-white/40 mt-1">Savings / Current</p>
+                        </div>
+                      </div>
+
+                      {/* Branch Name */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-white/80">Branch Name</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <MapPin className="w-4 h-4 text-green-400" />
+                          </div>
+                          <input
+                            type="text"
+                            name="branchName"
+                            value={bankFormData.branchName}
+                            readOnly
+                            placeholder="Branch name will appear here"
+                            className="w-full bg-white/5 border border-white/10 text-white/60 text-sm rounded-lg pl-11 pr-4 py-3 focus:outline-none placeholder:text-white/20 font-medium cursor-not-allowed"
+                          />
+                        </div>
+                        <p className="text-[10px] text-white/40 mt-1">Auto-fetched based on IFSC code</p>
+                      </div>
+
+                      {bankError && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                          <p className="text-red-400 text-xs font-bold">{bankError}</p>
+                        </div>
+                      )}
+
+                      {/* Save Button */}
+                      <div className="pt-4 flex justify-center">
+                        <button
+                          type="submit"
+                          disabled={isSavingBank}
+                          className="bg-[#10B981] hover:bg-[#059669] text-white text-sm font-bold py-3 px-8 rounded-lg flex items-center gap-2 transition-colors focus:outline-none shadow-lg shadow-green-500/20 disabled:opacity-50"
+                        >
+                          {isSavingBank ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save className="w-4 h-4" /> Save Bank Details</>}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Footer Note */}
+                  <div className="flex items-center justify-center gap-3 text-center mt-6">
+                    <ShieldCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <p className="text-[11px] text-white/60 font-medium">
+                      Your bank information is secure and encrypted.<br className="hidden sm:block" />
+                      We do not share your details with any third party.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === 'Verification' && (
+                <motion.div
+                  key="verification"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-12 py-10"
+                >
+                  <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-10">
+                    {/* Header */}
+                    <div className="space-y-4">
+                      <div className="w-24 h-24 bg-green-500/10 rounded-[2rem] flex items-center justify-center border border-green-500/20 mx-auto shadow-2xl shadow-green-500/10">
+                        <ShieldCheck className="w-12 h-12 text-green-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-4xl font-black text-white tracking-tighter">Profile Verification</h3>
+                        <p className="text-sm text-white/40 font-medium max-w-md mx-auto">
+                          Get the Verified Farmer badge and build trust with your buyers by requesting a formal profile review.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Card */}
+                    <div className="w-full bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[3rem] p-12 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      
+                      <div className="relative z-10 flex flex-col items-center gap-8">
+                        <div className="relative transition-transform duration-700 hover:scale-105">
+                          <CircularProgress percentage={currentUser?.profileCompletion || 0} size={140} strokeWidth={12} />
+                          <div className="absolute inset-0 bg-green-500/5 blur-3xl rounded-full -z-10 animate-pulse" />
+                        </div>
+
+                        <div className="space-y-3 text-center">
+                          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/10">Profile Score</p>
+                          <h4 className="text-3xl font-black text-white tracking-tight">
+                            {currentUser?.profileCompletion >= 75 ? 'Verification Ready' : 'Incomplete Profile'}
+                          </h4>
+                        </div>
+
+
+                        {/* Status Badges */}
+                        <div className="flex flex-wrap justify-center gap-4 py-4">
+                          {[
+                            { label: 'Not Eligible', active: (currentUser?.profileCompletion || 0) < 75 && currentUser?.verification?.verificationStatus !== 'Verification Requested' && !currentUser?.isVerified },
+                            { label: 'Ready for Verification', active: (currentUser?.profileCompletion || 0) >= 75 && currentUser?.verification?.verificationStatus === 'Ready for Verification' },
+                            { label: 'Verification Requested', active: currentUser?.verification?.verificationStatus === 'Verification Requested' },
+                            { label: 'Verified', active: currentUser?.isVerified || currentUser?.verification?.verificationStatus === 'Verified' }
+                          ].map((status, idx) => (
+                            <div 
+                              key={idx}
+                              className={`
+                                px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500
+                                ${status.active 
+                                  ? 'bg-green-500/20 border-green-500/30 text-green-400 shadow-lg shadow-green-500/10' 
+                                  : 'bg-white/5 border-white/5 text-white/10'}
+                              `}
+                            >
+                              {status.label}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Action Button Section */}
+                        <div className="w-full max-w-sm pt-4">
+                          {currentUser?.profileCompletion < 75 ? (
+                            <div className="space-y-6">
+                              <button
+                                disabled
+                                className="w-full py-5 rounded-2xl bg-white/5 border border-white/5 text-white/20 text-xs font-black uppercase tracking-[0.2em] cursor-not-allowed"
+                              >
+                                Request Verification
+                              </button>
+                              <p className="text-[11px] text-amber-400/60 font-bold uppercase tracking-widest bg-amber-400/5 py-3 px-6 rounded-xl border border-amber-400/10">
+                                Complete at least 75% of your profile to request verification.
+                              </p>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={handleRequestVerification}
+                              disabled={verificationLoading || currentUser?.verification?.verificationStatus === 'Verification Requested' || currentUser?.isVerified}
+                              className={`
+                                w-full py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 transform active:scale-95
+                                ${currentUser?.verification?.verificationStatus === 'Verification Requested' || currentUser?.isVerified
+                                  ? 'bg-green-500/10 border border-green-500/20 text-green-400 cursor-default'
+                                  : 'bg-green-500 hover:bg-green-400 text-black shadow-[0_20px_50px_rgba(34,197,94,0.3)] hover:shadow-[0_25px_60px_rgba(34,197,94,0.4)]'}
+                                disabled:opacity-50
+                              `}
+                            >
+                              {verificationLoading ? (
+                                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mx-auto" />
+                              ) : (
+                                currentUser?.isVerified ? 'Verified' : 
+                                currentUser?.verification?.verificationStatus === 'Verification Requested' ? 'Verification Requested' : 
+                                'Request Verification'
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Trust Footer */}
+                    <div className="flex items-center gap-6 text-white/20">
+                      <div className="h-px w-20 bg-white/5" />
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Manual Security Audit</span>
+                      </div>
+                      <div className="h-px w-20 bg-white/5" />
+                    </div>
+                  </div>
                 </motion.div>
               )}
 

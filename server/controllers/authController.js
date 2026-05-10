@@ -4,6 +4,40 @@ import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase.js';
 import sendResponse from '../utils/response.js';
 
+// 📈 Profile Completion Helper
+export const calculateProfileCompletion = (user) => {
+  let completion = 0;
+  
+  // 1. Personal Information (25%)
+  const personalFields = ['name', 'email', 'phone', 'dob'];
+  const personalScore = personalFields.filter(f => !!user[f]).length;
+  if (personalScore === personalFields.length) completion += 25;
+  else completion += (personalScore / personalFields.length) * 25;
+
+  // 2. Farm Details (25%)
+  const farmFields = ['farmName', 'villageLocality'];
+  let farmScore = farmFields.filter(f => !!user[f]).length;
+  if (user.primaryCrops && user.primaryCrops.length > 0) farmScore += 1;
+  const totalFarmFields = farmFields.length + 1;
+  if (farmScore === totalFarmFields) completion += 25;
+  else completion += (farmScore / totalFarmFields) * 25;
+
+  // 3. Uploaded Documents (25%)
+  // Using farmImages as a proxy for uploaded documents
+  if (user.farmImages && user.farmImages.length > 0) {
+    completion += 25;
+  }
+
+  // 4. Bank Details (25%)
+  const bankFields = ['accountHolderName', 'accountNumber', 'ifscCode', 'bankName', 'accountType', 'branchName'];
+  const bankScore = bankFields.filter(f => !!user[f]).length;
+  if (bankScore === bankFields.length) completion += 25;
+  else completion += (bankScore / bankFields.length) * 25;
+
+  return Math.round(completion);
+};
+
+
 // 🔐 Generate token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -93,12 +127,41 @@ export const loginUser = async (req, res, next) => {
 export const getMe = async (req, res) => {
   try {
     console.log("DEBUG: FETCHING PROFILE FOR", req.user.email);
-    sendResponse(res, 200, true, "User profile fetched successfully", req.user);
+    
+    const completion = calculateProfileCompletion(req.user);
+    
+    // Legacy fix: auto-migrate 'none' or null to 'Not Eligible'
+    if (!req.user.verification) {
+      req.user.verification = { verificationStatus: 'Not Eligible' };
+      await req.user.save();
+    } else {
+      const currentStatus = req.user.verification.verificationStatus;
+      if (currentStatus === 'none' || currentStatus === 'pending' || currentStatus === 'failed') {
+        req.user.verification.verificationStatus = 'Not Eligible';
+        await req.user.save();
+      }
+    }
+
+    // Auto-update status to "Ready for Verification" if completion >= 75% and status is "Not Eligible"
+    if (completion >= 75 && req.user.verification.verificationStatus === 'Not Eligible') {
+
+      req.user.verification.verificationStatus = 'Ready for Verification';
+      await req.user.save();
+    } else if (completion < 75 && req.user.verification.verificationStatus === 'Ready for Verification') {
+      req.user.verification.verificationStatus = 'Not Eligible';
+      await req.user.save();
+    }
+
+    const userData = req.user.toObject();
+    userData.profileCompletion = completion;
+
+    sendResponse(res, 200, true, "User profile fetched successfully", userData);
   } catch (error) {
     console.error("DEBUG: GET_ME ERROR", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const updateProfile = async (req, res, next) => {
   try {
@@ -109,7 +172,15 @@ export const updateProfile = async (req, res, next) => {
 
     const updates = { ...req.body };
     
+    // Handle legacy status if present in document
+    if (!user.verification) {
+      user.verification = { verificationStatus: 'Not Eligible' };
+    } else if (user.verification.verificationStatus === 'none' || !user.verification.verificationStatus) {
+      user.verification.verificationStatus = 'Not Eligible';
+    }
+
     // Handle Profile Photo and Farm Images Upload via Cloudinary
+
     if (req.files) {
       if (req.files.profilePhoto) {
         updates.profilePhoto = req.files.profilePhoto[0].path;
@@ -148,7 +219,44 @@ export const updateProfile = async (req, res, next) => {
 
     // Return the updated user without password
     const updatedUser = await User.findById(user._id).select('-password');
-    sendResponse(res, 200, true, 'Profile updated successfully', updatedUser);
+    const userData = updatedUser.toObject();
+    userData.profileCompletion = calculateProfileCompletion(updatedUser);
+
+    sendResponse(res, 200, true, 'Profile updated successfully', userData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ REQUEST VERIFICATION
+export const requestVerification = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    const completion = calculateProfileCompletion(user);
+
+    if (completion < 75) {
+      return sendResponse(res, 400, false, 'Complete at least 75% of your profile to request verification.');
+    }
+
+    if (user.verification.verificationStatus === 'Verified') {
+      return sendResponse(res, 400, false, 'Profile is already verified.');
+    }
+
+    if (user.verification.verificationStatus === 'Verification Requested') {
+      return sendResponse(res, 400, false, 'Verification is already requested.');
+    }
+
+    user.verification.verificationStatus = 'Verification Requested';
+    await user.save();
+
+    sendResponse(res, 200, true, 'Verification requested successfully', {
+      verificationStatus: user.verification.verificationStatus
+    });
+
   } catch (error) {
     next(error);
   }

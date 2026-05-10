@@ -248,9 +248,9 @@ export const apiService = {
     });
   },
 
-  initiateDigiLockerAuth: async (token) => {
-    return fetchWithRetry('/digilocker/auth', {
-      method: 'GET',
+  requestVerification: async (token) => {
+    return fetchWithRetry('/auth/request-verification', {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
       }
