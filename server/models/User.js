@@ -14,9 +14,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
   },
 
-  phone: {
-    type: String,
-  },
+  // Phone number is stored per-farm in the farm profile, not on the user.
 
   dob: {
     type: String,
@@ -36,9 +34,15 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 
-  // 🔥 NEW FIELDS (IMPORTANT)
+  // 🔥 FARM PROFILE FIELDS
   farmName: {
     type: String,
+  },
+
+  farmPhone: {
+    type: String,
+    unique: true,
+    sparse: true, // allows multiple null values without violating uniqueness
   },
 
   farmSize: {
@@ -170,4 +174,17 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+// 🔧 Drop legacy `phone_1` index if it exists (one-time migration)
+User.collection.dropIndex('phone_1').then(() => {
+  console.log('✅ Dropped legacy phone_1 index from users collection');
+}).catch((err) => {
+  if (err.codeName === 'IndexNotFound' || err.code === 27) {
+    console.log('ℹ️  No legacy phone_1 index found — nothing to drop');
+  } else {
+    console.error('⚠️  Error dropping phone_1 index:', err.message);
+  }
+});
+
+export default User;

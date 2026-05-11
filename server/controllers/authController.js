@@ -9,7 +9,7 @@ export const calculateProfileCompletion = (user) => {
   let completion = 0;
   
   // 1. Personal Information (25%)
-  const personalFields = ['name', 'email', 'phone', 'dob'];
+  const personalFields = ['name', 'email', 'dob'];
   const personalScore = personalFields.filter(f => !!user[f]).length;
   if (personalScore === personalFields.length) completion += 25;
   else completion += (personalScore / personalFields.length) * 25;
@@ -86,7 +86,20 @@ export const registerUser = async (req, res, next) => {
 
   } catch (error) {
     console.error("DEBUG: REGISTER ERROR", error.message);
-    next(error);
+    
+    // Handle MongoDB duplicate key errors (e.g. email already exists)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return sendResponse(res, 400, false, `An account with this ${field} already exists.`);
+    }
+    
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return sendResponse(res, 400, false, messages.join(', '));
+    }
+    
+    sendResponse(res, 500, false, 'Registration failed. Please try again later.');
   }
 };
 
@@ -121,7 +134,7 @@ export const loginUser = async (req, res, next) => {
 
   } catch (error) {
     console.error("DEBUG: LOGIN ERROR", error.message);
-    next(error);
+    sendResponse(res, 500, false, 'Login failed. Please try again later.');
   }
 };
 export const getMe = async (req, res) => {

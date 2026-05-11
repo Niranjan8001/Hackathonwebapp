@@ -234,7 +234,7 @@ const ProfileSummaryCard = ({ user }) => {
 
   // 📈 Real-time Progress Calculation
   const steps = [
-    { label: 'Personal Info', completed: !!(user?.name && user?.email && user?.phone && user?.dob) },
+    { label: 'Personal Info', completed: !!(user?.name && user?.email && user?.dob) },
     { label: 'Farm Details', completed: !!(user?.farmName && (user?.primaryCrops?.length > 0) && user?.villageLocality) },
     { label: 'Uploaded Docs', completed: !!(user?.farmImages?.length > 0) },
     { label: 'Bank Details', completed: !!(user?.bankName && user?.accountNumber) },
@@ -471,7 +471,6 @@ export const ProfileView = () => {
   const [personalFormData, setPersonalFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     dob: '',
     gender: '',
     language: ''
@@ -529,6 +528,7 @@ export const ProfileView = () => {
   // Farm Details State
   const [farmFormData, setFarmFormData] = useState({
     farmName: '',
+    farmPhone: '',
     farmSize: '',
     farmUnit: 'Acre',
     ownershipType: '',
@@ -749,7 +749,6 @@ export const ProfileView = () => {
       setPersonalFormData({
         name: currentUser.name || '',
         email: currentUser.email || '',
-        phone: currentUser.phone || '',
         dob: currentUser.dob || '',
         gender: currentUser.gender || '',
         language: currentUser.language || 'English'
@@ -767,6 +766,7 @@ export const ProfileView = () => {
 
       setFarmFormData({
         farmName: currentUser.farmName || '',
+        farmPhone: currentUser.farmPhone || '',
         farmSize: currentUser.farmSize || '',
         farmUnit: currentUser.farmUnit || 'Acre',
         ownershipType: currentUser.ownershipType || '',
@@ -884,7 +884,7 @@ export const ProfileView = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <InfoField label="Full Name" name="name" value={personalFormData.name} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={User} maxLength={50} />
                         <InfoField label="Email Address" name="email" value={personalFormData.email} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="email" icon={Mail} maxLength={100} />
-                        <InfoField label="Phone Number" name="phone" value={personalFormData.phone} onChange={handlePersonalChange} isEditing={isEditingPersonal} icon={Phone} maxLength={15} />
+
                         <InfoField label="Date of Birth" name="dob" value={personalFormData.dob} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="date" icon={Calendar} />
                         <InfoField label="Gender" name="gender" value={personalFormData.gender} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} icon={Users} />
                         <InfoField label="Language" name="language" value={personalFormData.language} onChange={handlePersonalChange} isEditing={isEditingPersonal} type="select" options={['English', 'Hindi', 'Bengali', 'Marathi', 'Tamil', 'Telugu']} icon={Languages} />
@@ -1012,6 +1012,25 @@ export const ProfileView = () => {
                               onChange={handleFarmFormChange}
                               placeholder="Enter farm name"
                               maxLength={100}
+                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Farm Phone Number */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Farm Contact Phone</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <Phone className="w-4 h-4 text-green-400/50" />
+                            </div>
+                            <input
+                              type="tel"
+                              name="farmPhone"
+                              value={farmFormData.farmPhone}
+                              onChange={handleFarmFormChange}
+                              placeholder="Enter farm contact number"
+                              maxLength={15}
                               className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
                             />
                           </div>
