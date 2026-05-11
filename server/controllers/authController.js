@@ -178,13 +178,29 @@ export const getMe = async (req, res) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
+    console.log("DEBUG: UPDATE_PROFILE called for userId:", req.userId);
+
     const user = await User.findById(req.userId);
     if (!user) {
       return sendResponse(res, 404, false, 'User not found');
     }
 
     const updates = { ...req.body };
-    
+
+    // ── Safety: strip fields that should never be updated via this route ──
+    delete updates.password;
+    delete updates.email;
+    delete updates.role;
+    delete updates._id;
+
+    // ── Migration: if frontend sends `phone`, remap it to `farmPhone` ──
+    if (updates.phone !== undefined) {
+      if (!updates.farmPhone && updates.phone) {
+        updates.farmPhone = updates.phone;
+      }
+      delete updates.phone;
+    }
+
     // Handle legacy status if present in document
     if (!user.verification) {
       user.verification = { verificationStatus: 'Not Eligible' };
@@ -224,6 +240,7 @@ export const updateProfile = async (req, res, next) => {
       delete updates.certification;
     }
 
+    // Apply all remaining updates to the user document
     Object.keys(updates).forEach(key => {
       user[key] = updates[key];
     });
@@ -235,9 +252,32 @@ export const updateProfile = async (req, res, next) => {
     const userData = updatedUser.toObject();
     userData.profileCompletion = calculateProfileCompletion(updatedUser);
 
+    console.log("DEBUG: UPDATE_PROFILE success for", user.email);
     sendResponse(res, 200, true, 'Profile updated successfully', userData);
+
   } catch (error) {
-    next(error);
+    console.error("DEBUG: UPDATE_PROFILE ERROR:", error.message);
+    console.error("DEBUG: UPDATE_PROFILE STACK:", error.stack);
+
+    // Handle MongoDB duplicate key errors (e.g. farmPhone already taken)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return sendResponse(res, 400, false, `This ${field} is already in use by another account.`);
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return sendResponse(res, 400, false, messages.join(', '));
+    }
+
+    // Handle Multer / Cloudinary upload errors
+    if (error.name === 'MulterError') {
+      return sendResponse(res, 400, false, `File upload error: ${error.message}`);
+    }
+
+    // Generic fallback — always return JSON, never crash
+    sendResponse(res, 500, false, 'Failed to update profile. Please try again later.');
   }
 };
 

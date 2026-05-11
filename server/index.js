@@ -22,11 +22,8 @@ connectDB();
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// FIXED CORS
-app.use(cors({
+// ── CORS Configuration (must be FIRST, before helmet) ──
+const corsOptions = {
   origin: [
     "https://hackathonwebapp.vercel.app",
     "http://localhost:5173",
@@ -35,12 +32,21 @@ app.use(cors({
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS for ALL routes with the same config
+app.options("*", cors(corsOptions));
+
+// Helmet — configured to NOT conflict with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: false,
 }));
 
-// IMPORTANT
-app.options("*", cors());
-
-app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
