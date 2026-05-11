@@ -7,6 +7,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
 import connectDB from "./config/db.js";
+
 import { errorHandler, notFound } from "./middlewares/errorMiddleware.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -17,38 +18,44 @@ import supportRoutes from "./routes/supportRoutes.js";
 import earningsRoutes from "./routes/earningsRoutes.js";
 import weatherRoutes from "./routes/weatherRoutes.js";
 
-
-// Connect to Database
 connectDB();
 
 const app = express();
 
-// Security Middlewares
-app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// FIXED CORS
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"].filter(Boolean),
-  credentials: true
+  origin: [
+    "https://hackathonwebapp.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Body Parsers
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+// IMPORTANT
+app.options("*", cors());
 
-// Rate Limiting
+app.use(helmet());
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+
 app.use("/api", limiter);
 
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "API Running 🚀",
+    message: "API Running 🚀"
   });
 });
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
@@ -57,11 +64,11 @@ app.use("/api/support", supportRoutes);
 app.use("/api/earnings", earningsRoutes);
 app.use("/api/weather", weatherRoutes);
 
-
-// Error Handling Middlewares
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
