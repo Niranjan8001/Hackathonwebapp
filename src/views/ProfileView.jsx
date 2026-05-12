@@ -371,10 +371,11 @@ const InfoField = ({ label, value, name, onChange, isEditing, type = "text", opt
         {type === "select" ? (
           <select
             name={name}
-            value={value}
+            value={value || ""}
             onChange={onChange}
             className="bg-transparent text-sm font-bold text-white focus:outline-none cursor-pointer w-full [&>option]:bg-[#111827]"
           >
+            <option value="" disabled>Select {label}</option>
             {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         ) : (
@@ -398,7 +399,9 @@ const InfoField = ({ label, value, name, onChange, isEditing, type = "text", opt
         {Icon && <Icon className="w-3 h-3 text-green-400/30 group-hover:text-green-400/60 transition-colors" />}
         <span className="text-[9px] font-black uppercase tracking-widest text-white/20">{label}</span>
       </div>
-      <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors">{value || `Add ${label}`}</span>
+      <span className={`text-sm font-bold transition-colors ${value ? 'text-white/80 group-hover:text-white' : 'text-white/40 italic group-hover:text-white/60'}`}>
+        {value || 'Not specified'}
+      </span>
       {/* Subtle Background Pattern */}
       <div className="absolute -right-2 -bottom-2 p-2 opacity-0 group-hover:opacity-[0.03] transition-all duration-500 group-hover:scale-110">
         {Icon ? <Icon className="w-16 h-16 -rotate-12" /> : <Type className="w-16 h-16 -rotate-12" />}
@@ -1131,24 +1134,30 @@ export const ProfileView = () => {
                             />
                           </div>
 
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                              <FileText className="w-4 h-4 text-green-400/50" />
-                            </div>
-                            <input
-                              type="text"
-                              name="pincode"
-                              value={farmFormData.pincode}
-                              onChange={handleFarmFormChange}
-                              placeholder="Enter pincode"
-                              maxLength={6}
-                              className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-11 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
-                            />
-                            {isPincodeLoading && (
-                              <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                                <div className="w-4 h-4 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+                          {/* Pincode (Used for Weather & Auto-fill) */}
+                          <div className="space-y-2 pt-2">
+                            <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                              Pincode <span className="text-green-400 normal-case tracking-normal ml-1">(Used for Weather Widget)</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <MapPin className="w-4 h-4 text-green-400/50" />
                               </div>
-                            )}
+                              <input
+                                type="text"
+                                name="pincode"
+                                value={farmFormData.pincode}
+                                onChange={handleFarmFormChange}
+                                placeholder="Enter 6-digit Pincode"
+                                maxLength={6}
+                                className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-11 pr-11 py-3.5 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all placeholder:text-white/10"
+                              />
+                              {isPincodeLoading && (
+                                <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                  <div className="w-4 h-4 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

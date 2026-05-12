@@ -18,10 +18,21 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  unit: {
+    type: String,
+    default: 'kg'
+  },
   stock: {
     type: Number,
     required: true,
     default: 0,
+  },
+  minOrderQuantity: {
+    type: Number,
+    default: 1
+  },
+  sku: {
+    type: String
   },
   sold: {
     type: Number,
@@ -33,10 +44,18 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
+  shortDescription: String,
   description: String,
   grade: String,
   harvestDate: Date,
   storageInstructions: String,
+  season: {
+    type: String,
+    enum: ['Summer', 'Monsoon', 'Winter', 'All Season'],
+    default: 'All Season'
+  },
+  farmerState: String,
+  farmerPincode: String,
   tags: [String],
   isVisible: {
     type: Boolean,

@@ -217,6 +217,7 @@ const StatCard = ({ icon, label, value, trend, trendColor }) => (
 const ProductRow = ({ product }) => {
   const isOut = product.stock <= 0 || product.status === 'Out of Stock';
   const isLow = !isOut && (product.quantity <= 30 || product.status === 'Low Stock');
+  const navigate = useNavigate();
 
   return (
     <tr className="bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
@@ -241,7 +242,7 @@ const ProductRow = ({ product }) => {
         <span className="text-xs font-black">
           {String(product.price).startsWith('₹') ? product.price : `₹${product.price}`}
         </span>
-        <span className="text-[10px] text-white/20 ml-1">{product.unit}</span>
+        <span className="text-[10px] text-white/20 ml-1">{product.unit || 'kg'}</span>
       </td>
       <td className="py-4">
         <span className={`text-xs font-black ${isOut ? 'text-red-400' : isLow ? 'text-orange-400' : 'text-green-400'}`}>
@@ -262,7 +263,11 @@ const ProductRow = ({ product }) => {
       </td>
       <td className="py-4 pr-6 rounded-r-2xl text-right">
         <div className="flex justify-end gap-2">
-          <button className="p-2 bg-white/5 hover:bg-green-500 hover:text-white rounded-lg text-white/40 transition-all" title="Edit">
+          <button 
+            onClick={() => navigate(`/edit-product/${product.id}`)}
+            className="p-2 bg-white/5 hover:bg-green-500 hover:text-white rounded-lg text-white/40 transition-all" 
+            title="Edit"
+          >
             <Edit3 className="w-4 h-4" />
           </button>
           <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/40 transition-all">

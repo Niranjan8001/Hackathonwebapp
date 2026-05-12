@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProduct, getProducts, getProductById, deleteProduct, getMyProducts } from '../controllers/productController.js';
+import { createProduct, getProducts, getProductById, deleteProduct, getMyProducts, updateProduct } from '../controllers/productController.js';
 import { getCategories } from '../controllers/categoryController.js';
 import { verifyToken, isFarmer } from '../middlewares/authMiddleware.js';
 import upload from '../middlewares/uploadMiddleware.js';
@@ -17,6 +17,7 @@ router.get('/my-products', verifyToken, getMyProducts);
 
 router.route('/:id')
   .get(getProductById)
+  .put(verifyToken, isFarmer, upload.array('images', 5), updateProduct)
   .delete(verifyToken, isFarmer, deleteProduct);
 
 export default router;

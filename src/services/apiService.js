@@ -188,6 +188,20 @@ export const apiService = {
     });
   },
 
+  getProductById: async (productId) => {
+    return fetchWithRetry(`/products/${productId}`);
+  },
+
+  updateProduct: async (productId, productData, token) => {
+    return fetchWithRetry(`/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: productData instanceof FormData ? productData : JSON.stringify(productData)
+    });
+  },
+
   getMe: async (token) => {
     return fetchWithRetry('/auth/me', {
       headers: {

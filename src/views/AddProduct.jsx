@@ -36,7 +36,7 @@ const FALLBACK_CATEGORIES = [
 
 export const AddProduct = () => {
   const navigate = useNavigate();
-  const { updateProfile } = useFarmerContext(); // Reusing for generic updates if needed
+  const { updateProfile, currentUser } = useFarmerContext(); // Reusing for generic updates if needed
   
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,7 @@ export const AddProduct = () => {
     grade: 'Grade A',
     harvestDate: new Date().toISOString().split('T')[0],
     storageInstructions: '',
+    season: 'All Season',
     tags: [],
     isVisible: true,
     deliveryType: 'Home Delivery',
@@ -364,6 +365,43 @@ export const AddProduct = () => {
                         maxLength={200}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10"
                      />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Season</label>
+                        <select 
+                           name="season" value={formData.season} onChange={handleChange}
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all appearance-none cursor-pointer"
+                        >
+                           <option className="bg-[#0F172A]">All Season</option>
+                           <option className="bg-[#0F172A]">Summer</option>
+                           <option className="bg-[#0F172A]">Monsoon</option>
+                           <option className="bg-[#0F172A]">Winter</option>
+                        </select>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Location (State)</label>
+                        <input 
+                           type="text" 
+                           value={currentUser?.state || 'Not specified'} 
+                           readOnly
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white/50 cursor-not-allowed focus:outline-none"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Pincode</label>
+                        <input 
+                           type="text" 
+                           value={currentUser?.pincode || 'Not specified'} 
+                           readOnly
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white/50 cursor-not-allowed focus:outline-none"
+                        />
+                     </div>
+                     <p className="col-span-2 text-[10px] text-white/30 italic mt-1">* State and Pincode are automatically attached to your products based on your profile.</p>
                   </div>
 
                   <div className="space-y-2">

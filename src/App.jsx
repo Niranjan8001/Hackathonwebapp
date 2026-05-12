@@ -8,6 +8,7 @@ import { BottomNavigation } from './components/layout/BottomNavigation';
 import { Login } from './views/Login';
 import { DashboardView } from './views/DashboardView';
 import { AddProduct } from './views/AddProduct';
+import { EditProduct } from './views/EditProduct';
 import { OrdersView } from './views/OrdersView';
 import { ProductsView } from './views/ProductsView';
 import { EarningsView } from './views/EarningsView';
@@ -39,7 +40,10 @@ const MainLayout = ({ children }) => {
   const getPageTitle = (path) => {
     switch (path) {
       case '/add-product': return 'Add Product';
-      default: return 'FarmDirect';
+      case '/inventory': return 'My Products';
+      default:
+        if (path.startsWith('/edit-product/')) return 'Edit Product';
+        return 'FarmDirect';
     }
   };
 
@@ -72,6 +76,7 @@ const AppRoutes = () => {
       <Route path="/complete-profile" element={<PrivateRoute><CompleteProfile /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><DashboardView /></PrivateRoute>} />
       <Route path="/add-product" element={<PrivateRoute><AddProduct /></PrivateRoute>} />
+      <Route path="/edit-product/:id" element={<PrivateRoute><EditProduct /></PrivateRoute>} />
       <Route path="/orders" element={<PrivateRoute><OrdersView /></PrivateRoute>} />
       <Route path="/orders/:orderId" element={<PrivateRoute><OrderDetailView /></PrivateRoute>} />
       <Route path="/inventory" element={<PrivateRoute><ProductsView /></PrivateRoute>} />
