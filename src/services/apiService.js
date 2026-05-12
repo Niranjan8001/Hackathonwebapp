@@ -146,6 +146,21 @@ const fetchWithRetry = async (endpoint, options = {}, retries = MAX_RETRIES, bac
 
     // Rethrow ApiErrors or wrap generic errors
     if (error instanceof ApiError) throw error;
+
+    // Intelligent Fallback: If local backend fails, try production for stability
+    const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+    const productionUrl = 'https://hackathonwebapp.onrender.com/api';
+    
+    if (isLocalhost && !url.includes(productionUrl)) {
+      console.warn(`[API Fallback] Local connection failed. Attempting production fallback for ${endpoint}...`);
+      const fallbackUrl = `${productionUrl}${endpoint}`;
+      try {
+        return await fetchWithRetry(fallbackUrl, options, 0); // No retries for fallback
+      } catch (fallbackError) {
+        console.error(`[API Fallback] Production fallback also failed.`);
+      }
+    }
+
     throw new ApiError(error.message || 'An unexpected error occurred', 500);
   }
 };
@@ -308,6 +323,16 @@ export const apiService = {
       headers: {
         'Authorization': `Bearer ${token}`
       }
+    });
+  },
+
+  updateOrderStatus: async (orderId, status, token) => {
+    return fetchWithRetry(`/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
     });
   }
 };
