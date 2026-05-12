@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -73,7 +74,16 @@ export const registerUser = async (req, res, next) => {
       role: role || 'farmer'
     });
 
-    console.log("DEBUG: USER CREATED SUCCESSFULLY", user.email);
+    console.log("-----------------------------------------");
+    console.log("✅ USER REGISTRATION TRACE");
+    console.log("Model Name:      ", User.modelName);
+    console.log("Collection Name: ", User.collection.name);
+    console.log("Database Name:   ", mongoose.connection.name);
+    console.log("Payload Name:    ", name);
+    console.log("Payload Email:   ", email);
+    console.log("Save Success:    ", !!user._id);
+    console.log("User ID:         ", user._id);
+    console.log("-----------------------------------------");
 
     sendResponse(res, 201, true, 'User registered successfully', {
       _id: user._id,
@@ -312,5 +322,29 @@ export const requestVerification = async (req, res, next) => {
 
   } catch (error) {
     next(error);
+  }
+};
+
+// 🔍 DIAGNOSTIC: Check Model Status
+export const getModelStatus = async (req, res) => {
+  try {
+    const status = {
+      modelName: User.modelName,
+      collectionName: User.collection.name,
+      databaseName: mongoose.connection.name,
+      readyState: mongoose.connection.readyState, // 1 = connected
+      host: mongoose.connection.host,
+      timestamp: new Date().toISOString(),
+      isCorrectCollection: User.collection.name === 'Farmer'
+    };
+    
+    console.log("-----------------------------------------");
+    console.log("🔍 MODEL STATUS CHECK");
+    console.log(JSON.stringify(status, null, 2));
+    console.log("-----------------------------------------");
+    
+    res.json({ success: true, status });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };

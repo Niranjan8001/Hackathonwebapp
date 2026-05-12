@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMe, registerUser, loginUser, updateProfile, requestVerification } from '../controllers/authController.js';
+import { getMe, registerUser, loginUser, updateProfile, requestVerification, getModelStatus } from '../controllers/authController.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 import upload from '../middlewares/uploadMiddleware.js';
 import sendResponse from '../utils/response.js';
@@ -30,5 +30,6 @@ router.post('/login', loginUser);
 router.get('/me', verifyToken, getMe);
 router.put('/update-profile', verifyToken, safeUpload(profileUpload), updateProfile);
 router.post('/request-verification', verifyToken, requestVerification);
+router.get('/status', getModelStatus);
 
 export default router;

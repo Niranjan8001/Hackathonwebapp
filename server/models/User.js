@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
   farmPhone: {
     type: String,
     unique: true,
-    sparse: true, // allows multiple null values without violating uniqueness
+    sparse: true, 
   },
 
   farmSize: {
@@ -174,7 +174,11 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
+const User =
+  mongoose.models.User ||
+  mongoose.model('User', userSchema, 'Farmer');
+
+console.log(`[MODEL INIT] User model initialized. Collection: ${User.collection.name}, Database: ${mongoose.connection.name}`);
 
 // 🔧 Drop legacy `phone_1` index if it exists (one-time migration)
 User.collection.dropIndex('phone_1').then(() => {
