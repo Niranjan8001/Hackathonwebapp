@@ -18,7 +18,10 @@ import {
   HelpCircle,
   Clock,
   Sparkles,
-
+  Leaf,
+  ShieldCheck,
+  Sprout,
+  Award
 } from 'lucide-react';
 import { useFarmerContext } from '../context/FarmerContext';
 import { GlassLayout } from '../components/layout/GlassLayout';
@@ -32,6 +35,14 @@ const FALLBACK_CATEGORIES = [
   { _id: 'f5', name: 'Dairy' },
 
   { _id: 'f7', name: 'Spices' }
+];
+
+const AVAILABLE_TAGS = [
+  { id: 'organic', label: 'Organic farming', icon: Leaf },
+  { id: 'chemical_free', label: 'Chemical free', icon: ShieldCheck },
+  { id: 'fresh', label: 'Fresh harvest', icon: Sprout },
+  { id: 'low_stock', label: 'Low stock', icon: AlertCircle },
+  { id: 'best_selling', label: 'Best selling', icon: Award },
 ];
 
 export const AddProduct = () => {
@@ -53,7 +64,7 @@ export const AddProduct = () => {
     grade: 'Grade A',
     harvestDate: new Date().toISOString().split('T')[0],
     storageInstructions: '',
-    season: 'All Season',
+    season: 'all_season',
     tags: [],
     isVisible: true,
     deliveryType: 'Home Delivery',
@@ -62,7 +73,7 @@ export const AddProduct = () => {
     images: []
   });
 
-  const [tagInput, setTagInput] = useState('');
+
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
 
@@ -94,14 +105,15 @@ export const AddProduct = () => {
     }));
   };
 
-  const handleAddTag = (e) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      if (!formData.tags.includes(tagInput.trim())) {
-        setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
+  const toggleTag = (tagLabel) => {
+    setFormData(prev => {
+      const isSelected = prev.tags.includes(tagLabel);
+      if (isSelected) {
+        return { ...prev, tags: prev.tags.filter(t => t !== tagLabel) };
+      } else {
+        return { ...prev, tags: [...prev.tags, tagLabel] };
       }
-      setTagInput('');
-    }
+    });
   };
 
   const removeTag = (tagToRemove) => {
@@ -374,10 +386,12 @@ export const AddProduct = () => {
                            name="season" value={formData.season} onChange={handleChange}
                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all appearance-none cursor-pointer"
                         >
-                           <option className="bg-[#0F172A]">All Season</option>
-                           <option className="bg-[#0F172A]">Summer</option>
-                           <option className="bg-[#0F172A]">Monsoon</option>
-                           <option className="bg-[#0F172A]">Winter</option>
+                           <option value="all_season" className="bg-[#0F172A]">All Season</option>
+                           <option value="summer" className="bg-[#0F172A]">Summer</option>
+                           <option value="winter" className="bg-[#0F172A]">Winter</option>
+                           <option value="monsoon" className="bg-[#0F172A]">Monsoon</option>
+                           <option value="spring" className="bg-[#0F172A]">Spring</option>
+                           <option value="autumn" className="bg-[#0F172A]">Autumn</option>
                         </select>
                      </div>
                   </div>
@@ -404,24 +418,38 @@ export const AddProduct = () => {
                      <p className="col-span-2 text-[10px] text-white/30 italic mt-1">* State and Pincode are automatically attached to your products based on your profile.</p>
                   </div>
 
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Tags (optional)</label>
-                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[56px] flex flex-wrap gap-2 items-center">
-                        {formData.tags.map(tag => (
-                          <span key={tag} className="bg-green-500/10 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg flex items-center gap-2">
-                             {tag}
-                             <X className="w-3 h-3 cursor-pointer" onClick={() => removeTag(tag)} />
-                          </span>
-                        ))}
-                        <input 
-                           type="text" 
-                           value={tagInput}
-                           onChange={(e) => setTagInput(e.target.value)}
-                           onKeyDown={handleAddTag}
-                           placeholder="Add tags..."
-                           maxLength={30}
-                           className="flex-1 bg-transparent border-none text-sm font-bold text-white focus:outline-none min-w-[100px] placeholder:text-white/10"
-                        />
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Select Tags</label>
+                     <div className="grid grid-cols-1 gap-3">
+                        {AVAILABLE_TAGS.map((tag) => {
+                          const Icon = tag.icon;
+                          const isSelected = formData.tags.includes(tag.label);
+                          return (
+                            <div 
+                              key={tag.id}
+                              onClick={() => toggleTag(tag.label)}
+                              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${
+                                isSelected 
+                                  ? 'bg-green-500/10 border-green-500/30' 
+                                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                 isSelected ? 'bg-green-500 border-green-500' : 'border-white/20 group-hover:border-white/40'
+                               }`}>
+                                  {isSelected && <Check className="w-3 h-3 text-black stroke-[4]" />}
+                               </div>
+                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                 isSelected ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/20'
+                               }`}>
+                                  <Icon className="w-4 h-4" />
+                               </div>
+                               <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-white' : 'text-white/40'}`}>
+                                  {tag.label}
+                               </span>
+                            </div>
+                          );
+                        })}
                      </div>
                   </div>
 

@@ -62,11 +62,15 @@ export const FarmerProvider = ({ children }) => {
           setRealOrders(orders);
           
           // Calculate earnings from completed/delivered orders
-          const deliveredOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'delivered');
-          const pendingOrders = orders.filter(o => o.status === 'Processing' || o.status === 'Pending' || o.status === 'pending' || o.status === 'accepted' || o.status === 'shipped');
+          const deliveredOrders = orders.filter(o => 
+            o.status?.toLowerCase() === 'delivered'
+          );
+          const pendingOrders = orders.filter(o => 
+            ['processing', 'pending', 'accepted', 'shipped', 'out for delivery'].includes(o.status?.toLowerCase())
+          );
           
-          const totalEarnings = deliveredOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-          const pendingEarnings = pendingOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+          const totalEarnings = deliveredOrders.reduce((acc, o) => acc + (o.summary?.total || o.totalAmount || 0), 0);
+          const pendingEarnings = pendingOrders.reduce((acc, o) => acc + (o.summary?.total || o.totalAmount || 0), 0);
           
           const now = new Date();
           
@@ -74,21 +78,21 @@ export const FarmerProvider = ({ children }) => {
           const sevenDaysAgo = new Date(now);
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
           const weeklyEarnings = deliveredOrders
-            .filter(o => new Date(o.createdAt) > sevenDaysAgo)
-            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+            .filter(o => new Date(o.placedAt || o.createdAt) > sevenDaysAgo)
+            .reduce((acc, o) => acc + (o.summary?.total || o.totalAmount || 0), 0);
             
           // This month earnings
           const thisMonthEarnings = deliveredOrders
             .filter(o => {
-              const d = new Date(o.createdAt);
+              const d = new Date(o.placedAt || o.createdAt);
               return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
             })
-            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+            .reduce((acc, o) => acc + (o.summary?.total || o.totalAmount || 0), 0);
             
           // Last month earnings
           const lastMonthEarnings = deliveredOrders
             .filter(o => {
-              const d = new Date(o.createdAt);
+              const d = new Date(o.placedAt || o.createdAt);
               let lastMonth = now.getMonth() - 1;
               let year = now.getFullYear();
               if (lastMonth < 0) {
@@ -97,7 +101,7 @@ export const FarmerProvider = ({ children }) => {
               }
               return d.getMonth() === lastMonth && d.getFullYear() === year;
             })
-            .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+            .reduce((acc, o) => acc + (o.summary?.total || o.totalAmount || 0), 0);
 
           let percentageChange = null;
           if (lastMonthEarnings > 0) {

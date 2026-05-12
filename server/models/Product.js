@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  farmer: {
+  owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+    alias: 'farmer'
   },
   title: {
     type: String,
@@ -18,21 +19,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  unit: {
-    type: String,
-    default: 'kg'
-  },
   stock: {
     type: Number,
     required: true,
     default: 0,
-  },
-  minOrderQuantity: {
-    type: Number,
-    default: 1
-  },
-  sku: {
-    type: String
   },
   sold: {
     type: Number,
@@ -44,15 +34,14 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
-  shortDescription: String,
   description: String,
   grade: String,
   harvestDate: Date,
   storageInstructions: String,
   season: {
     type: String,
-    enum: ['Summer', 'Monsoon', 'Winter', 'All Season'],
-    default: 'All Season'
+    enum: ['summer', 'winter', 'monsoon', 'spring', 'autumn', 'all_season'],
+    default: 'all_season'
   },
   farmerState: String,
   farmerPincode: String,

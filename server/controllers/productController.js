@@ -34,9 +34,9 @@ export const createProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Farmer profile not found" });
     }
 
-    // Farmer ID comes from the authenticated user — never from frontend input
+    // Owner ID comes from the authenticated user — never from frontend input
     const product = new Product({
-      farmer: req.user.id,
+      owner: req.user.id,
       title: req.body.title,
       price: Number(req.body.price),
       category: req.body.category,
@@ -49,7 +49,7 @@ export const createProduct = async (req, res) => {
         ? new Date(req.body.harvestDate)
         : null,
       storageInstructions: req.body.storageInstructions || "",
-      season: req.body.season || "All Season",
+      season: req.body.season || "all_season",
       farmerState: farmerProfile.state || "Not specified",
       farmerPincode: farmerProfile.pincode || "Not specified",
       tags: Array.isArray(tags) ? tags : [],
@@ -79,11 +79,11 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res, next) => {
   try {
-    const { farmer } = req.query;
+    const { owner } = req.query;
 
-    const filter = farmer ? { farmer } : {};
+    const filter = owner ? { owner } : {};
 
-    const products = await Product.find(filter).populate('farmer', FARMER_POPULATE_FIELDS);
+    const products = await Product.find(filter).populate('owner', FARMER_POPULATE_FIELDS);
     sendResponse(res, 200, true, 'Products fetched successfully', products);
   } catch (error) {
     console.error('Error in getProducts:', error.message);
@@ -93,7 +93,7 @@ export const getProducts = async (req, res, next) => {
 
 export const getMyProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({ farmer: req.user.id }).populate('farmer', FARMER_POPULATE_FIELDS);
+    const products = await Product.find({ owner: req.user.id }).populate('owner', FARMER_POPULATE_FIELDS);
     sendResponse(res, 200, true, 'My products fetched successfully', products);
   } catch (error) {
     console.error('Error in getMyProducts:', error.message);
@@ -103,7 +103,7 @@ export const getMyProducts = async (req, res, next) => {
 
 export const getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id).populate('farmer', FARMER_POPULATE_FIELDS);
+    const product = await Product.findById(req.params.id).populate('owner', FARMER_POPULATE_FIELDS);
     if (!product) {
       res.status(404);
       throw new Error('Product not found');
@@ -124,7 +124,7 @@ export const deleteProduct = async (req, res, next) => {
       throw new Error('Product not found');
     }
 
-    if (product.farmer.toString() !== req.user.id.toString()) {
+    if (product.owner.toString() !== req.user.id.toString()) {
       res.status(403);
       throw new Error('Not authorized to delete this product');
     }
@@ -146,7 +146,7 @@ export const updateProduct = async (req, res, next) => {
       throw new Error('Product not found');
     }
 
-    if (product.farmer.toString() !== req.user.id.toString()) {
+    if (product.owner.toString() !== req.user.id.toString()) {
       res.status(403);
       throw new Error('Not authorized to update this product');
     }
@@ -188,11 +188,7 @@ export const updateProduct = async (req, res, next) => {
     product.price = req.body.price ? Number(req.body.price) : product.price;
     product.category = req.body.category || product.category;
     product.stock = req.body.stock !== undefined ? Number(req.body.stock) : product.stock;
-    product.unit = req.body.unit || product.unit;
-    product.shortDescription = req.body.shortDescription !== undefined ? req.body.shortDescription : product.shortDescription;
     product.description = req.body.description !== undefined ? req.body.description : product.description;
-    product.minOrderQuantity = req.body.minOrderQuantity !== undefined ? Number(req.body.minOrderQuantity) : product.minOrderQuantity;
-    product.sku = req.body.sku !== undefined ? req.body.sku : product.sku;
     product.season = req.body.season !== undefined ? req.body.season : product.season;
     product.farmerState = farmerProfile ? farmerProfile.state : product.farmerState;
     product.farmerPincode = farmerProfile ? farmerProfile.pincode : product.farmerPincode;

@@ -217,6 +217,14 @@ export const apiService = {
       }
     });
   },
+  
+  getOrderById: async (orderId, token) => {
+    return fetchWithRetry(`/orders/${orderId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
 
   login: async (email, password) => {
     return fetchWithRetry('/auth/login', {

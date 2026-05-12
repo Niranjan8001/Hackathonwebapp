@@ -19,7 +19,11 @@ import {
   Scale,
   AlignLeft,
   FileText,
-  Hash
+  Hash,
+  Leaf,
+  ShieldCheck,
+  Sprout,
+  Award
 } from 'lucide-react';
 import { useFarmerContext } from '../context/FarmerContext';
 import { GlassLayout } from '../components/layout/GlassLayout';
@@ -32,6 +36,14 @@ const FALLBACK_CATEGORIES = [
   { _id: 'f4', name: 'Commercial crops' },
   { _id: 'f5', name: 'Dairy' },
   { _id: 'f7', name: 'Spices' }
+];
+
+const AVAILABLE_TAGS = [
+  { id: 'organic', label: 'Organic farming', icon: Leaf },
+  { id: 'chemical_free', label: 'Chemical free', icon: ShieldCheck },
+  { id: 'fresh', label: 'Fresh harvest', icon: Sprout },
+  { id: 'low_stock', label: 'Low stock', icon: AlertCircle },
+  { id: 'best_selling', label: 'Best selling', icon: Award },
 ];
 
 export const EditProduct = () => {
@@ -59,7 +71,7 @@ export const EditProduct = () => {
     grade: 'Grade A',
     harvestDate: '',
     storageInstructions: '',
-    season: 'All Season',
+    season: 'all_season',
     tags: [],
     isVisible: true,
     deliveryType: 'Home Delivery',
@@ -67,7 +79,7 @@ export const EditProduct = () => {
     deliveryTime: '2-3 Days',
   });
 
-  const [tagInput, setTagInput] = useState('');
+
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -110,7 +122,7 @@ export const EditProduct = () => {
             grade: p.grade || 'Grade A',
             harvestDate: p.harvestDate ? new Date(p.harvestDate).toISOString().split('T')[0] : '',
             storageInstructions: p.storageInstructions || '',
-            season: p.season || 'All Season',
+            season: p.season || 'all_season',
             tags: p.tags || [],
             isVisible: p.isVisible !== false,
             deliveryType: p.deliveryType || 'Home Delivery',
@@ -143,14 +155,15 @@ export const EditProduct = () => {
     }));
   };
 
-  const handleAddTag = (e) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      if (!formData.tags.includes(tagInput.trim())) {
-        setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
+  const toggleTag = (tagLabel) => {
+    setFormData(prev => {
+      const isSelected = prev.tags.includes(tagLabel);
+      if (isSelected) {
+        return { ...prev, tags: prev.tags.filter(t => t !== tagLabel) };
+      } else {
+        return { ...prev, tags: [...prev.tags, tagLabel] };
       }
-      setTagInput('');
-    }
+    });
   };
 
   const removeTag = (tagToRemove) => {
@@ -310,36 +323,17 @@ export const EditProduct = () => {
                          </div>
                       </div>
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Unit *</label>
+                         <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Location *</label>
                          <div className="relative">
-                            <select 
-                               name="unit" value={formData.unit} onChange={handleChange}
-                               className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all appearance-none cursor-pointer"
-                            >
-                               <option value="kg" className="bg-[#0F172A]">kg</option>
-                               <option value="gram" className="bg-[#0F172A]">gram</option>
-                               <option value="liter" className="bg-[#0F172A]">liter</option>
-                               <option value="piece" className="bg-[#0F172A]">piece</option>
-                               <option value="box" className="bg-[#0F172A]">box</option>
-                            </select>
-                            <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 rotate-90 pointer-events-none" />
+                            <input 
+                               type="text" 
+                               value={currentUser?.state || 'Not specified'} 
+                               readOnly
+                               className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white/50 cursor-not-allowed focus:outline-none"
+                            />
                          </div>
                       </div>
                   </div>
-
-                  <div className="space-y-2">
-                     <div className="flex justify-between items-center">
-                         <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Short Description</label>
-                         <span className="text-[10px] text-white/30">{formData.shortDescription.length}/120</span>
-                     </div>
-                     <textarea 
-                        name="shortDescription" value={formData.shortDescription} onChange={handleChange}
-                        placeholder="Brief summary of the product..."
-                        maxLength={120}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-white/10 min-h-[80px] resize-none"
-                     />
-                  </div>
-
                   <div className="space-y-2">
                      <div className="flex justify-between items-center">
                          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Detailed Description</label>
@@ -359,35 +353,16 @@ export const EditProduct = () => {
                            name="season" value={formData.season} onChange={handleChange}
                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all appearance-none cursor-pointer"
                         >
-                           <option className="bg-[#0F172A]">All Season</option>
-                           <option className="bg-[#0F172A]">Summer</option>
-                           <option className="bg-[#0F172A]">Monsoon</option>
-                           <option className="bg-[#0F172A]">Winter</option>
+                           <option value="all_season" className="bg-[#0F172A]">All Season</option>
+                           <option value="summer" className="bg-[#0F172A]">Summer</option>
+                           <option value="winter" className="bg-[#0F172A]">Winter</option>
+                           <option value="monsoon" className="bg-[#0F172A]">Monsoon</option>
+                           <option value="spring" className="bg-[#0F172A]">Spring</option>
+                           <option value="autumn" className="bg-[#0F172A]">Autumn</option>
                         </select>
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Location (State)</label>
-                        <input 
-                           type="text" 
-                           value={currentUser?.state || 'Not specified'} 
-                           readOnly
-                           className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white/50 cursor-not-allowed focus:outline-none"
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Pincode</label>
-                        <input 
-                           type="text" 
-                           value={currentUser?.pincode || 'Not specified'} 
-                           readOnly
-                           className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white/50 cursor-not-allowed focus:outline-none"
-                        />
-                     </div>
-                     <p className="col-span-2 text-[10px] text-white/30 italic mt-1">* State and Pincode are automatically attached to your products based on your profile.</p>
-                  </div>
                </div>
             </div>
 
@@ -417,23 +392,7 @@ export const EditProduct = () => {
                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all"
                      />
                   </div>
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Min Order Qty</label>
-                     <input 
-                        type="number" name="minOrderQuantity" value={formData.minOrderQuantity} onChange={handleChange}
-                        placeholder="1"
-                        min="1"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all"
-                     />
-                  </div>
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">SKU (optional)</label>
-                     <input 
-                        type="text" name="sku" value={formData.sku} onChange={handleChange}
-                        placeholder="e.g., TOM-001"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white focus:outline-none focus:border-green-500/50 transition-all"
-                     />
-                  </div>
+
                </div>
             </div>
           </div>
@@ -551,25 +510,39 @@ export const EditProduct = () => {
                </div>
 
                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Tags (optional)</label>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[56px] flex flex-wrap gap-2 items-center">
-                     {formData.tags.map(tag => (
-                       <span key={tag} className="bg-green-500/10 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg flex items-center gap-2 border border-green-500/20">
-                          {tag}
-                          <X className="w-3 h-3 cursor-pointer" onClick={() => removeTag(tag)} />
-                       </span>
-                     ))}
-                     <input 
-                        type="text" 
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleAddTag}
-                        placeholder="Add tags..."
-                        maxLength={30}
-                        className="flex-1 bg-transparent border-none text-sm font-bold text-white focus:outline-none min-w-[100px] placeholder:text-white/10"
-                     />
+                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Select Tags</label>
+                     <div className="grid grid-cols-1 gap-3">
+                        {AVAILABLE_TAGS.map((tag) => {
+                          const Icon = tag.icon;
+                          const isSelected = formData.tags.includes(tag.label);
+                          return (
+                            <div 
+                              key={tag.id}
+                              onClick={() => toggleTag(tag.label)}
+                              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${
+                                isSelected 
+                                  ? 'bg-green-500/10 border-green-500/30' 
+                                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                 isSelected ? 'bg-green-500 border-green-500' : 'border-white/20 group-hover:border-white/40'
+                               }`}>
+                                  {isSelected && <Check className="w-3 h-3 text-black stroke-[4]" />}
+                               </div>
+                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                 isSelected ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/20'
+                               }`}>
+                                  <Icon className="w-4 h-4" />
+                               </div>
+                               <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-white' : 'text-white/40'}`}>
+                                  {tag.label}
+                               </span>
+                            </div>
+                          );
+                        })}
+                     </div>
                   </div>
-               </div>
             </div>
           </div>
 

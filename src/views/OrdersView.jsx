@@ -34,40 +34,50 @@ export const OrdersView = () => {
 
   // Map backend orders to UI format gracefully
   const formattedOrders = useMemo(() => {
-    return orders.map(o => ({
-      id: `#ORD${o.id || Math.floor(Math.random()*10000)}`,
-      rawId: o.id,
-      customer: o.customerName || 'Unknown',
-      location: o.buyerId?.location || 'India',
-      product: o.productName || o.products?.[0]?.productId?.title || 'Unknown Product',
-      quantity: `${o.quantity || o.products?.[0]?.quantity || 1}`,
-      amount: `₹${o.total || o.totalAmount || 0}`,
-      status: o.status === 'pending' ? 'Pending' : (o.status || 'Pending'),
-      date: new Date(o.date || o.createdAt || Date.now()).toLocaleDateString(),
-      time: new Date(o.date || o.createdAt || Date.now()).toLocaleTimeString(),
-      items: o.products?.length || 1,
-      customerImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      productImg: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop'
-    }));
+    return orders.map(o => {
+      const firstItem = o.items?.[0] || {};
+      const customer = o.customerDetails?.fullName || o.userId?.name || 'Unknown';
+      const location = o.customerDetails?.district || o.customerDetails?.state || 'India';
+      const orderDate = new Date(o.placedAt || o.createdAt || Date.now());
+      
+      return {
+        id: `#ORD${String(o._id).slice(-6).toUpperCase()}`,
+        rawId: o._id,
+        customer: customer,
+        location: location,
+        product: firstItem.name || firstItem.productId?.title || 'Unknown Product',
+        quantity: `${firstItem.quantity || 1}`,
+        amount: `₹${o.summary?.total || 0}`,
+        status: o.status || 'Pending',
+        date: orderDate.toLocaleDateString(),
+        rawDate: orderDate, // Store raw date for filtering
+        time: orderDate.toLocaleTimeString(),
+        itemCount: o.items?.length || 0,
+        customerImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+        productImg: firstItem.productId?.images?.[0] || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=100&fit=crop'
+      };
+    });
   }, [orders]);
 
   const stats = [
     { label: 'Total Orders', value: formattedOrders.length, subtext: 'All time orders', icon: ClipboardList, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
-    { label: 'Pending', value: formattedOrders.filter(o => o.status === 'Pending').length, subtext: 'Awaiting action', icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
-    { label: 'Processing', value: formattedOrders.filter(o => o.status === 'Processing').length, subtext: 'In progress', icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
-    { label: 'Delivered', value: formattedOrders.filter(o => o.status === 'Delivered').length, subtext: 'Completed', icon: CheckCircle2, color: 'text-green-400', bgColor: 'bg-green-500/10' },
-    { label: 'Cancelled', value: formattedOrders.filter(o => o.status === 'Cancelled').length, subtext: 'Cancelled orders', icon: XCircle, color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
+    { label: 'Pending', value: formattedOrders.filter(o => o.status?.toLowerCase() === 'pending').length, subtext: 'Awaiting action', icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
+    { label: 'Processing', value: formattedOrders.filter(o => o.status?.toLowerCase() === 'processing').length, subtext: 'In progress', icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+    { label: 'Delivered', value: formattedOrders.filter(o => o.status?.toLowerCase() === 'delivered').length, subtext: 'Completed', icon: CheckCircle2, color: 'text-green-400', bgColor: 'bg-green-500/10' },
+    { label: 'Cancelled', value: formattedOrders.filter(o => o.status?.toLowerCase() === 'cancelled').length, subtext: 'Cancelled orders', icon: XCircle, color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
   ];
 
   const tabs = ['All Orders', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
   const filteredOrders = useMemo(() => {
     return formattedOrders.filter(order => {
-      const orderDate = new Date(order.date);
-      const matchesDate = orderDate >= dateRange.startDate && orderDate <= dateRange.endDate;
+      // Set hours to 0 for date-only comparison if needed, 
+      // but usually we want to include orders on the endDate
+      const matchesDate = order.rawDate >= dateRange.startDate && order.rawDate <= dateRange.endDate;
       const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           order.customer.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTab = activeTab === 'All Orders' || order.status === activeTab;
+                           order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           order.product.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTab = activeTab === 'All Orders' || order.status.toLowerCase() === activeTab.toLowerCase();
       return matchesDate && matchesSearch && matchesTab;
     });
   }, [searchQuery, activeTab, formattedOrders, dateRange]);
@@ -294,7 +304,7 @@ const OrderRow = ({ order }) => {
           </div>
           <div>
             <p className="text-sm font-bold text-white">{order.product}</p>
-            <p className="text-[10px] text-white/40 font-medium">{order.items} {order.items > 1 ? 'items' : 'item'}</p>
+            <p className="text-[10px] text-white/40 font-medium">{order.itemCount} {order.itemCount > 1 ? 'items' : 'item'}</p>
           </div>
         </div>
       </td>
